@@ -1,31 +1,32 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# Callia
-morning brew
-=======
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-=======
 # 📰 Callia: Morning Brew
->>>>>>> ab1f8b0 (feat: init callia repo)
 
 A modern, AI-powered news aggregation platform that delivers personalized daily morning briefs from your favorite news sources.
 
 ## ✨ Features
 
-- **🌅 Personalized Morning Briefs**: Get AI-curated news summaries tailored to your interests
-- **🎧 Audio & Text Formats**: Listen to your briefs or read them - your choice
-- **📡 Smart News Crawling**: Automatically aggregate from websites and RSS feeds
-- **👥 Community Sharing**: Discover and share interesting news sources and briefs
-- **🔒 Privacy Controls**: Granular control over what you share with the community
-- **📱 Responsive Design**: Beautiful, modern interface that works on all devices
+- ** Personalized News Briefings**: Leverages AI to generate tailored news summaries based on user-selected sources and preferences.
+- **Multi-Source Aggregation**: Gathers news from both websites and RSS feeds using `newspaper4k` and `feedparser`.
+- **User Management**: Supports Google and email registration/login for a personalized experience.
+- **Source Customization**: Allows users to select from a provided list of news sources or add their own.
+- **In-App Brief Viewer**: Read daily news summaries directly within the app.
+- **Brief History**: Access up to 30 days of past news briefings.
+- **Social Sharing**: Share interesting briefs with the community or on social media.
 
 ## 🏗️ Tech Stack
 
-- **Frontend**: Next.js 15 with TypeScript
-- **Styling**: Tailwind CSS v4
-- **Components**: shadcn/ui
+### Frontend
+- **Framework**: Next.js (with App Router)
+- **UI Library**: shadcn/ui
+- **Styling**: Tailwind CSS
 - **Icons**: Lucide React
 - **Fonts**: Newsreader (serif) & Noto Sans (sans-serif)
+
+### Backend
+- **Language & Framework**: Python with FastAPI
+- **News Crawling**: `newspaper4k` and `feedparser`
+- **Database**: Supabase (PostgreSQL)
+- **Task Scheduling**: Celery or APScheduler for daily jobs
+- **Email Service**: SMTP integration (e.g., SendGrid)
 
 ## 🚀 Getting Started
 
@@ -39,7 +40,7 @@ A modern, AI-powered news aggregation platform that delivers personalized daily 
 1. Clone the repository:
 ```bash
 git clone https://github.com/yourusername/callia.git
-cd callia/Callia
+cd callia
 ```
 
 2. Install dependencies:
@@ -57,35 +58,27 @@ npm run dev
 ## 📄 Pages Overview
 
 ### 🏠 Home Page (`/`)
-- Hero section with value proposition
-- Features overview with 6 key capabilities
-- User testimonials from satisfied readers
-- Pricing tiers (Free, Pro, Enterprise)
+- Hero section with value proposition.
+- Features overview.
+- User testimonials.
+- Pricing tiers.
 
 ### 📋 My Briefs (`/briefs`)
-- View last 30 days of personalized morning briefs
-- Switch between text and audio formats
-- Make individual briefs public to community
-- Download audio briefings for offline listening
+- View the last 30 days of personalized morning briefs.
+- Share daily briefs to social media.
 
 ### 🌍 Community (`/community`)
-- **Featured Briefs**: Discover briefs shared by other users
-- **Popular Sources**: Browse and follow news sources used by the community
-- Like, comment, and share community content
-- Add your own news sources to share
+- Discover official and community-shared news sources.
+- Sources are categorized as Official, Community Hot, and Recently Added.
+- View detailed information for each source and subscribe/unsubscribe.
 
 ### ⚙️ Profile & Settings (`/profile`)
-- **Profile**: Manage personal information and avatar
-- **News Sources**: Add/remove RSS feeds and websites
-- **Preferences**: Configure brief generation and privacy settings
-- Control what you share with the community
+- **Profile**: Manage personal information.
+- **News Sources**: View and manage your subscribed news sources.
+- **Preferences**: Configure language and other user preferences.
 
 ## 🎨 Design Philosophy
 
-<<<<<<< HEAD
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
->>>>>>> 7e8acf6 (Initial commit from Create Next App)
-=======
 Callia follows a clean, professional news site aesthetic with:
 
 - **Typography**: Newsreader for headlines, Noto Sans for body text
@@ -100,17 +93,17 @@ Callia follows a clean, professional news site aesthetic with:
 ```
 src/
 ├── app/                    # Next.js app router
-│   ├── briefs/            # User's morning briefs page
-│   ├── community/         # Community features page
-│   ├── profile/           # User profile & settings
-│   ├── globals.css        # Global styles & CSS variables
-│   ├── layout.tsx         # Root layout component
-│   └── page.tsx           # Home page
-├── components/            # Reusable React components
-│   ├── ui/               # shadcn/ui components
-│   └── Navigation.tsx    # Main navigation component
-└── lib/                  # Utility functions
-    └── utils.ts          # shadcn/ui utilities
+│   ├── briefs/             # User's morning briefs page
+│   ├── community/          # Community and news sources page
+│   ├── profile/            # User profile & settings page
+│   ├── globals.css         # Global styles & CSS variables
+│   ├── layout.tsx          # Root layout component
+│   └── page.tsx            # Home page
+├── components/             # Reusable React components
+│   ├── ui/                 # shadcn/ui components
+│   └── ...
+└── lib/                    # Utility functions
+    └── utils.ts            # shadcn/ui utilities
 ```
 
 ### Available Scripts
@@ -130,12 +123,13 @@ npx shadcn@latest add [component-name]
 
 ## 📝 Future Enhancements
 
+- [ ] **AI Voice Conversation**: Chat with an AI about your daily Morning Brew.
+- [ ] **Mobile Applications**: Develop native iOS and Android apps.
 - [ ] User authentication system
 - [ ] Backend API integration
 - [ ] Real news source integration
 - [ ] Audio generation pipeline
 - [ ] Email delivery system
-- [ ] Mobile app development
 - [ ] Advanced AI personalization
 
 ## 🤝 Contributing
@@ -157,4 +151,3 @@ Built with ❤️ by the Callia team
 ---
 
 **Note**: This is currently a frontend prototype. The backend services for news crawling, AI processing, and audio generation are planned for future development phases.
->>>>>>> ab1f8b0 (feat: init callia repo)
