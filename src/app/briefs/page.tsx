@@ -4,118 +4,126 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   Play,
   Pause,
-  Share2,
   Calendar,
-  Clock,
   Volume2,
   FileText,
-  Globe,
   Lock,
   Download,
-  Twitter,
-  Linkedin,
-  Copy,
+  Loader2,
 } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/contexts/AuthContext";
 
-// Mock data for demonstration
-const mockBriefs = [
-  {
-    id: 1,
-    date: "2024-01-15",
-    title: "Friday Morning Brief",
-    summary: "Top stories from tech, finance, and world news",
-    isPublic: false,
-    audioUrl: "/audio/brief-1.mp3",
-    textContent: `**Tech News**
-• Apple announces new MacBook Pro with M4 chip, featuring improved performance and battery life
-• OpenAI releases GPT-5 with enhanced reasoning capabilities
-• Meta reports strong Q4 earnings driven by AI advertising
+// Types for brief data
+interface UserBrief {
+  id: string;
+  date: string;
+  audioUrl: string;
+  textContent: string;
+  sources: number;
+}
 
-**Finance**
-• Federal Reserve holds interest rates steady at 5.25-5.5%
-• Tesla stock surges 12% after beating delivery expectations
-• Bitcoin reaches new all-time high above $45,000
+// Function to fetch user briefs from Supabase
+const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
+  const { data, error } = await supabase
+    .from('user_brief')
+    .select('user_id, brief_date, brief_content, news_source_ids')
+    .eq('user_id', userId)
+    .order('brief_date', { ascending: false })
+    .limit(7);
 
-**World News**
-• Climate summit in Dubai reaches historic agreement on fossil fuel transition
-• Japan announces plans for lunar base construction by 2030
-• European Union implements new AI regulation framework`,
-    topics: ["Technology", "Finance", "World News"],
-    sources: 12,
-    readTime: "3 min"
-  },
-  {
-    id: 2,
-    date: "2024-01-14",
-    title: "Thursday Morning Brief",
-    summary: "Breaking developments in AI and global markets",
-    isPublic: true,
-    audioUrl: "/audio/brief-2.mp3",
-    textContent: `**AI & Technology**
-• Google's Gemini Pro now available for enterprise customers
-• Microsoft integrates advanced AI into Office suite
-• Nvidia announces new data center chips for AI workloads
-
-**Global Markets**
-• Asian markets rally on positive economic data from China
-• Oil prices stabilize after Middle East tensions ease
-• Gold hits 6-month high amid inflation concerns
-
-**Health & Science**
-• New Alzheimer's drug shows promising trial results
-• Scientists develop breakthrough in quantum computing error correction
-• WHO declares end to latest Ebola outbreak in West Africa`,
-    topics: ["AI", "Global Markets", "Health"],
-    sources: 15,
-    readTime: "4 min"
-  },
-  {
-    id: 3,
-    date: "2024-01-13",
-    title: "Wednesday Morning Brief",
-    summary: "Space exploration and renewable energy advances",
-    isPublic: false,
-    audioUrl: "/audio/brief-3.mp3",
-    textContent: `**Space & Science**
-• SpaceX successfully launches Mars supply mission
-• NASA's James Webb telescope discovers potentially habitable exoplanet
-• China announces crewed mission to Mars for 2030
-
-**Energy & Environment**
-• Solar panel efficiency breakthrough reaches 30% conversion rate
-• Major oil companies pledge carbon neutrality by 2040
-• Wind energy capacity doubles in offshore installations
-
-**Business**
-• Amazon reports record holiday sales driven by AI recommendations
-• Stripe valued at $95 billion in latest funding round
-• EV charging network expansion accelerates across US highways`,
-    topics: ["Space", "Energy", "Business"],
-    sources: 18,
-    readTime: "5 min"
+  if (error) {
+    console.error('Error fetching user briefs:', error);
+    return [];
   }
-];
+
+  // Transform the data from Supabase to match our UI structure
+  return data.map((brief) => {
+    let parsedContent;
+    try {
+      // Try to parse brief_content as JSON if it contains structured data
+      parsedContent = typeof brief.brief_content === 'string'
+        ? JSON.parse(brief.brief_content)
+        : brief.brief_content;
+    } catch {
+      // If not JSON, treat as plain text
+      parsedContent = { textContent: brief.brief_content };
+    }
+
+    // Calculate sources count from news_source_ids length
+    let sourcesCount = 0;
+    if (brief.news_source_ids) {
+      if (Array.isArray(brief.news_source_ids)) {
+        sourcesCount = brief.news_source_ids.length;
+      } else if (typeof brief.news_source_ids === 'string') {
+        try {
+          const parsedIds = JSON.parse(brief.news_source_ids);
+          sourcesCount = Array.isArray(parsedIds) ? parsedIds.length : 0;
+        } catch {
+          // If it's a comma-separated string, split and count
+          sourcesCount = brief.news_source_ids.split(',').filter(id => id.trim()).length;
+        }
+      }
+    }
+
+    return {
+      id: brief.user_id + '-' + brief.brief_date, // Create unique ID
+      date: brief.brief_date,
+      audioUrl: parsedContent.audioUrl || "/audio/brief-placeholder.mp3",
+      textContent: parsedContent.textContent || brief.brief_content,
+      sources: sourcesCount,
+    };
+  });
+};
 
 export default function BriefsPage() {
-  const [selectedBrief, setSelectedBrief] = useState(mockBriefs[0]);
+  const { user, loading: authLoading } = useAuth();
+  const [briefs, setBriefs] = useState<UserBrief[]>([]);
+  const [selectedBrief, setSelectedBrief] = useState<UserBrief | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playingBriefId, setPlayingBriefId] = useState<number | null>(null);
+  const [playingBriefId, setPlayingBriefId] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const togglePublic = (briefId: number) => {
-    // In a real app, this would make an API call
-    console.log(`Toggling public status for brief ${briefId}`);
-    // This is a mock implementation to update the UI state
-    setSelectedBrief(prev => ({...prev, isPublic: !prev.isPublic}));
-  };
+  // Fetch briefs when user is available
+  useEffect(() => {
+    const loadBriefs = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-  const handlePlayPause = (brief: typeof mockBriefs[0]) => {
+      try {
+        setLoading(true);
+        setError(null);
+        const userBriefs = await fetchUserBriefs(user.id);
+        setBriefs(userBriefs);
+        if (userBriefs.length > 0) {
+          setSelectedBrief(userBriefs[0]);
+        }
+      } catch (err) {
+        setError('Failed to load briefs');
+        console.error('Error loading briefs:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (!authLoading) {
+      loadBriefs();
+    }
+  }, [user, authLoading]);
+
+
+
+  const handlePlayPause = (brief: UserBrief) => {
     if (audioRef.current && playingBriefId === brief.id) {
       if (isPlaying) {
         audioRef.current.pause();
@@ -142,6 +150,84 @@ export default function BriefsPage() {
     }
   };
 
+  // Show loading state
+  if (authLoading || loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-7xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p>Loading your briefs...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-7xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-600 mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-7xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Please sign in to view your briefs</h2>
+              <Button onClick={() => window.location.href = '/login'}>
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no briefs
+  if (briefs.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-7xl px-4 py-8">
+          <div className="mb-8">
+            <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
+              Your Morning Briefs
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Access your personalized daily news from the past 30 days
+            </p>
+          </div>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-4">No briefs found</h2>
+              <p className="text-muted-foreground">
+                Your daily briefs will appear here once they&apos;re generated.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-7xl px-4 py-8">
@@ -161,15 +247,15 @@ export default function BriefsPage() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Recent Briefs</h2>
               <Badge variant="secondary">
-                {mockBriefs.length} briefs
+                {briefs.length} briefs
               </Badge>
             </div>
 
-            {mockBriefs.map((brief) => (
+            {briefs.map((brief) => (
               <Card
                 key={brief.id}
                 className={`cursor-pointer transition-all hover:shadow-md ${
-                  selectedBrief.id === brief.id ? 'ring-2 ring-primary' : ''
+                  selectedBrief?.id === brief.id ? 'ring-2 ring-primary' : ''
                 }`}
                 onClick={() => setSelectedBrief(brief)}
               >
@@ -185,22 +271,16 @@ export default function BriefsPage() {
                         })}
                       </span>
                     </div>
-                    {brief.isPublic ? (
-                      <Globe className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                    )}
+                    <Lock className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <CardTitle className="text-lg">{brief.title}</CardTitle>
-                  <CardDescription>{brief.summary}</CardDescription>
+                  <CardTitle className="text-lg">
+                    Morning Brief - {new Date(brief.date).toLocaleDateString('en-US', { weekday: 'long' })}
+                  </CardTitle>
+                  <CardDescription>Your personalized daily news brief</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
                     <div className="flex items-center space-x-4">
-                      <span className="flex items-center">
-                        <FileText className="h-3 w-3 mr-1" />
-                        {brief.readTime}
-                      </span>
                       <span>{brief.sources} sources</span>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -227,88 +307,29 @@ export default function BriefsPage() {
 
           {/* Brief Content */}
           <div className="lg:col-span-2">
+            {!selectedBrief ? (
+              <Card>
+                <CardContent className="p-8 text-center">
+                  <p className="text-muted-foreground">Select a brief to view its content</p>
+                </CardContent>
+              </Card>
+            ) : (
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="font-newsreader text-2xl">
-                      {selectedBrief.title}
+                      Morning Brief - {new Date(selectedBrief.date).toLocaleDateString('en-US', { weekday: 'long' })}
                     </CardTitle>
                     <CardDescription className="flex items-center space-x-4 mt-2">
                       <span className="flex items-center">
                         <Calendar className="h-4 w-4 mr-1" />
                         {new Date(selectedBrief.date).toLocaleDateString()}
                       </span>
-                      <span className="flex items-center">
-                        <Clock className="h-4 w-4 mr-1" />
-                        {selectedBrief.readTime} read
-                      </span>
                       <span>{selectedBrief.sources} sources</span>
                     </CardDescription>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Share2 className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>Share Your Morning Brief</DialogTitle>
-                          <DialogDescription>
-                            Make this brief public to get a shareable link and post it to social media.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center justify-between py-4 border-b">
-                          <div className="space-y-1">
-                            <p className="font-medium">Make Public</p>
-                            <p className="text-sm text-muted-foreground">
-                              Share this brief with the Callia community.
-                            </p>
-                          </div>
-                          <Switch
-                            checked={selectedBrief.isPublic}
-                            onCheckedChange={() => togglePublic(selectedBrief.id)}
-                          />
-                        </div>
-                        <div className="pt-4 space-y-4">
-                            <label className="text-sm font-medium">Shareable Link</label>
-                            <div className="flex items-center space-x-2">
-                                <input
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                    disabled={!selectedBrief.isPublic}
-                                    value={selectedBrief.isPublic ? `https://callia.com/briefs/${selectedBrief.id}` : ''}
-                                    readOnly
-                                />
-                                <Button variant="outline" size="sm" disabled={!selectedBrief.isPublic}>
-                                    <Copy className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        </div>
-                        <div className="pt-4 flex items-center space-x-2">
-                            <Button variant="outline" size="sm" disabled={!selectedBrief.isPublic}>
-                                <Twitter className="h-4 w-4 mr-2"/>
-                                Twitter
-                            </Button>
-                             <Button variant="outline" size="sm" disabled={!selectedBrief.isPublic}>
-                                <Linkedin className="h-4 w-4 mr-2"/>
-                                LinkedIn
-                            </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
 
-                {/* Topics */}
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {selectedBrief.topics.map((topic) => (
-                    <Badge key={topic} variant="secondary">
-                      {topic}
-                    </Badge>
-                  ))}
                 </div>
               </CardHeader>
 
@@ -325,11 +346,28 @@ export default function BriefsPage() {
                     </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="text" className="mt-6">
-                    <div className="prose max-w-none">
-                      <div className="whitespace-pre-line text-foreground leading-relaxed">
+                                    <TabsContent value="text" className="mt-6">
+                    <div className="prose max-w-none dark:prose-invert text-foreground leading-relaxed">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({...props}) => <h1 className="text-2xl font-bold mb-4" {...props} />,
+                          h2: ({...props}) => <h2 className="text-xl font-semibold mb-3" {...props} />,
+                          h3: ({...props}) => <h3 className="text-lg font-medium mb-2" {...props} />,
+                          p: ({...props}) => <p className="mb-4" {...props} />,
+                          ul: ({...props}) => <ul className="list-disc pl-6 mb-4" {...props} />,
+                          ol: ({...props}) => <ol className="list-decimal pl-6 mb-4" {...props} />,
+                          li: ({...props}) => <li className="mb-1" {...props} />,
+                          blockquote: ({...props}) => <blockquote className="border-l-4 border-primary pl-4 italic mb-4" {...props} />,
+                          code: ({...props}) => <code className="bg-muted px-1 py-0.5 rounded text-sm" {...props} />,
+                          pre: ({...props}) => <pre className="bg-muted p-4 rounded-lg overflow-x-auto mb-4" {...props} />,
+                          strong: ({...props}) => <strong className="font-semibold" {...props} />,
+                          em: ({...props}) => <em className="italic" {...props} />,
+                          a: ({...props}) => <a className="text-primary hover:underline" {...props} />,
+                        }}
+                      >
                         {selectedBrief.textContent}
-                      </div>
+                      </ReactMarkdown>
                     </div>
                   </TabsContent>
 
@@ -356,7 +394,7 @@ export default function BriefsPage() {
                               <div>
                                 <p className="font-medium">Audio Brief</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {selectedBrief.readTime} • High quality AI voice
+                                  3 min • High quality AI voice
                                 </p>
                               </div>
                             </div>
@@ -405,6 +443,7 @@ export default function BriefsPage() {
                 </Tabs>
               </CardContent>
             </Card>
+            )}
           </div>
         </div>
       </div>
