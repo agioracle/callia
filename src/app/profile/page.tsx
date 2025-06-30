@@ -4,30 +4,76 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import {
   User,
-  Settings,
   Globe,
   Trash2,
-  Edit,
-  Save,
   Eye,
   EyeOff,
   Rss,
   Link as LinkIcon,
   Plus,
-  CreditCard
+  CreditCard,
+  Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  getUserSubscriptionsAlternative,
+  toggleSubscriptionStatus,
+  removeUserSubscription,
+  getUserManagedNewsSources,
+  createNewsSource,
+  updateNewsSource,
+  deleteNewsSource,
+  detectRSSFeed,
+  extractSiteInfo
+} from "@/lib/auth";
 
-// Mock user data
+// Define types for the data structure
+type NewsSource = {
+  id: string;
+  title: string;
+  description: string;
+  language: string;
+  category: string;
+  link: string;
+  rss: string | null;
+  tags: string;
+  user_id: string;
+  is_public: boolean;
+  subscribers_num: number;
+  status: string;
+  latest_crawled_num: number;
+  latest_crawled_at: string;
+  created_at?: string;
+};
+
+type UserSubscription = {
+  user_id: string;
+  news_source_id: string;
+  status: string;
+  news_source: NewsSource;
+};
+
+type NewSourceForm = {
+  url: string;
+  title: string;
+  description: string;
+  category: string;
+  language: string;
+  isPublic: boolean;
+};
+
+// Mock user data - this could also come from Supabase user metadata
 const userData = {
   name: "John Doe",
   email: "john.doe@example.com",
@@ -44,98 +90,256 @@ const userData = {
   language: "en-US",
 };
 
-// Mock news sources data
-const newsSources = [
-  {
-    id: 1,
-    name: "TechCrunch",
-    url: "https://techcrunch.com/feed/",
-    type: "RSS",
-    category: "Technology",
-    isActive: true,
-    isPublic: true,
-    articlesCount: 156,
-    lastUpdated: "2024-01-15T10:30:00Z"
-  },
-  {
-    id: 2,
-    name: "The Verge",
-    url: "https://www.theverge.com/rss/index.xml",
-    type: "RSS",
-    category: "Technology",
-    isActive: true,
-    isPublic: true,
-    articlesCount: 89,
-    lastUpdated: "2024-01-15T09:45:00Z"
-  },
-  {
-    id: 3,
-    name: "MIT Technology Review",
-    url: "https://www.technologyreview.com/feed/",
-    type: "RSS",
-    category: "Science",
-    isActive: true,
-    isPublic: false,
-    articlesCount: 42,
-    lastUpdated: "2024-01-15T08:20:00Z"
-  },
-  {
-    id: 4,
-    name: "Hacker News",
-    url: "https://news.ycombinator.com",
-    type: "Website",
-    category: "Technology",
-    isActive: false,
-    isPublic: false,
-    articlesCount: 203,
-    lastUpdated: "2024-01-14T16:30:00Z"
-  }
+const categories = [
+  "Technology", "Business", "Science", "Politics", "Sports",
+  "Health", "Entertainment", "General", "Finance", "World News"
+];
+
+const languages = [
+  { code: "en", name: "English" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "it", name: "Italian" },
+  { code: "pt", name: "Portuguese" },
+  { code: "ru", name: "Russian" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" }
 ];
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile");
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState(userData);
-  const [sources, setSources] = useState(newsSources);
-  const [newSourceUrl, setNewSourceUrl] = useState("");
+  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
+  const [managedSources, setManagedSources] = useState<NewsSource[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddSource, setShowAddSource] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newSourceForm, setNewSourceForm] = useState<NewSourceForm>({
+    url: "",
+    title: "",
+    description: "",
+    category: "General",
+    language: "en",
+    isPublic: false
+  });
+  const { user } = useAuth();
 
-  const handleSaveProfile = () => {
-    // In a real app, this would make an API call
-    console.log("Saving profile:", editedData);
-    setIsEditing(false);
-  };
+  // Fetch user subscriptions and managed sources on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
 
-  const handleToggleSource = (sourceId: number, field: "isActive" | "isPublic") => {
-    setSources(sources.map(source =>
-      source.id === sourceId
-        ? { ...source, [field]: !source[field] }
-        : source
-    ));
-  };
+      try {
+        // Fetch subscriptions and managed sources in parallel
+        const [subscriptionsResult, managedSourcesResult] = await Promise.all([
+          getUserSubscriptionsAlternative(user.id),
+          getUserManagedNewsSources(user.id)
+        ]);
 
-  const handleDeleteSource = (sourceId: number) => {
-    setSources(sources.filter(source => source.id !== sourceId));
-  };
+        if (subscriptionsResult.error) {
+          setError(subscriptionsResult.error.message);
+        } else {
+          setSubscriptions(subscriptionsResult.data || []);
+        }
 
-  const handleAddSource = () => {
-    if (newSourceUrl.trim()) {
-      const newSource = {
-        id: Date.now(),
-        name: "New Source",
-        url: newSourceUrl,
-        type: newSourceUrl.includes("/feed") || newSourceUrl.includes(".xml") ? "RSS" : "Website",
-        category: "General",
-        isActive: true,
-        isPublic: false,
-        articlesCount: 0,
-        lastUpdated: new Date().toISOString()
-      };
-      setSources([...sources, newSource]);
-      setNewSourceUrl("");
-      setShowAddSource(false);
+        if (managedSourcesResult.error) {
+          setError(managedSourcesResult.error.message);
+        } else {
+          setManagedSources(managedSourcesResult.data || []);
+        }
+      } catch (err) {
+        setError('Failed to fetch data');
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user?.id]);
+
+  const handleUrlChange = async (url: string) => {
+    setNewSourceForm(prev => ({ ...prev, url }));
+
+    if (url.trim() && url.startsWith('http')) {
+      try {
+        // Auto-extract site info
+        const siteInfo = await extractSiteInfo(url);
+
+        setNewSourceForm(prev => ({
+          ...prev,
+          title: siteInfo.title || prev.title,
+          description: siteInfo.description || prev.description,
+          category: siteInfo.category || prev.category
+        }));
+      } catch (err) {
+        console.error('Error extracting site info:', err);
+      }
     }
   };
+
+  // Handle subscription toggle/removal (for subscribed sources in Profile tab)
+  const handleSubscriptionToggle = async (newsSourceId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const subscription = subscriptions.find(s => s.news_source_id === newsSourceId);
+      const newStatus = subscription?.status === 'Subscribed' ? 'Unsubscribed' : 'Subscribed';
+
+      await toggleSubscriptionStatus(user.id, newsSourceId, newStatus);
+
+      setSubscriptions(subs =>
+        subs.map(sub =>
+          sub.news_source_id === newsSourceId
+            ? { ...sub, status: newStatus }
+            : sub
+        )
+      );
+    } catch {
+      setError('Failed to update subscription');
+    }
+  };
+
+  const handleSubscriptionRemove = async (newsSourceId: string) => {
+    if (!user?.id) return;
+
+    try {
+      await removeUserSubscription(user.id, newsSourceId);
+      setSubscriptions(subs => subs.filter(sub => sub.news_source_id !== newsSourceId));
+    } catch {
+      setError('Failed to remove subscription');
+    }
+  };
+
+  // Handle managed source toggle/update (for owned sources in Sources tab)
+  const handleManagedSourceToggle = async (sourceId: string, field: "status" | "is_public") => {
+    if (!user?.id) return;
+
+    try {
+      if (field === "status") {
+        const source = managedSources.find(s => s.id === sourceId);
+        const newStatus = source?.status === 'Activated' ? 'Deactivated' : 'Activated';
+
+        await updateNewsSource(sourceId, user.id, { status: newStatus });
+
+        setManagedSources(sources =>
+          sources.map(source =>
+            source.id === sourceId
+              ? { ...source, status: newStatus }
+              : source
+          )
+        );
+      } else if (field === "is_public") {
+        const source = managedSources.find(s => s.id === sourceId);
+        const newIsPublic = !source?.is_public;
+
+        await updateNewsSource(sourceId, user.id, { is_public: newIsPublic });
+
+        setManagedSources(sources =>
+          sources.map(source =>
+            source.id === sourceId
+              ? { ...source, is_public: newIsPublic }
+              : source
+          )
+        );
+      }
+    } catch {
+      setError('Failed to update source');
+    }
+  };
+
+  const handleDeleteSource = async (sourceId: string) => {
+    if (!user?.id) return;
+
+    try {
+      await deleteNewsSource(sourceId, user.id);
+      setManagedSources(sources => sources.filter(source => source.id !== sourceId));
+    } catch {
+      setError('Failed to delete source');
+    }
+  };
+
+    const handleAddSource = async () => {
+    if (!user?.id || !newSourceForm.url.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Detect if URL is RSS feed
+      const isRSS = await detectRSSFeed(newSourceForm.url);
+
+      const newsSourceData = {
+        title: newSourceForm.title || 'Untitled Source',
+        description: newSourceForm.description,
+        language: newSourceForm.language,
+        category: newSourceForm.category,
+        link: newSourceForm.url,
+        rss: isRSS ? newSourceForm.url : undefined,
+        is_public: newSourceForm.isPublic
+      };
+
+      const { data, error } = await createNewsSource(user.id, newsSourceData);
+
+      if (error) {
+        setError(error.message);
+      } else if (data) {
+        setManagedSources(sources => [data, ...sources]);
+        setNewSourceForm({
+          url: "",
+          title: "",
+          description: "",
+          category: "General",
+          language: "en",
+          isPublic: false
+        });
+        setShowAddSource(false);
+      }
+    } catch (err) {
+      setError('Failed to add source');
+      console.error('Error adding source:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Convert subscriptions to the format expected by the existing UI
+  const subscribedSources = subscriptions.map(sub => ({
+    id: sub.news_source_id,
+    name: sub.news_source.title,
+    url: sub.news_source.link,
+    type: sub.news_source.rss ? "RSS" : "Website",
+    category: sub.news_source.category,
+    isActive: sub.status === 'Subscribed',
+    isPublic: sub.news_source.is_public,
+    articlesCount: sub.news_source.latest_crawled_num || 0,
+    lastUpdated: sub.news_source.latest_crawled_at,
+    description: sub.news_source.description
+  }));
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500 mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,18 +355,14 @@ export default function ProfilePage() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile" className="flex items-center">
               <User className="h-4 w-4 mr-2" />
               Profile
             </TabsTrigger>
             <TabsTrigger value="sources" className="flex items-center">
               <Rss className="h-4 w-4 mr-2" />
-              News Sources
-            </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center">
-              <Settings className="h-4 w-4 mr-2" />
-              Preferences
+              My Sources
             </TabsTrigger>
             <TabsTrigger value="billing" className="flex items-center" asChild>
               <Link href="/billing"><CreditCard className="h-4 w-4 mr-2" />Billing</Link>
@@ -171,141 +371,99 @@ export default function ProfilePage() {
 
           <TabsContent value="profile" className="mt-8">
             <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Profile Information</CardTitle>
-                    <CardDescription>
-                      Update your personal information and profile settings
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant={isEditing ? "default" : "outline"}
-                    onClick={isEditing ? handleSaveProfile : () => setIsEditing(true)}
-                  >
-                    {isEditing ? (
-                      <>
-                        <Save className="h-4 w-4 mr-2" />
-                        Save Changes
-                      </>
-                    ) : (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Profile
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </CardHeader>
-
               <CardContent className="space-y-6">
                 {/* Avatar and Basic Info */}
                 <div className="flex items-center space-x-6">
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={userData.avatar} />
+                    <AvatarImage src={user?.user_metadata?.avatar_url || userData.avatar} />
                     <AvatarFallback className="text-lg">
-                      {userData.name.split(' ').map(n => n[0]).join('')}
+                      {(user?.user_metadata?.full_name || userData.name).split(' ').map((n: string) => n[0]).join('')}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1">
-                    {isEditing ? (
-                      <div className="space-y-3">
-                        <Input
-                          value={editedData.name}
-                          onChange={(e) => setEditedData({...editedData, name: e.target.value})}
-                          placeholder="Full Name"
-                        />
-                        <Input
-                          value={editedData.email}
-                          onChange={(e) => setEditedData({...editedData, email: e.target.value})}
-                          placeholder="Email"
-                          type="email"
-                        />
-                      </div>
-                    ) : (
-                      <div>
-                        <h3 className="text-xl font-semibold flex items-center space-x-2">
-                          <span>{userData.name}</span>
-                          {userData.isVerified && (
-                            <Badge variant="secondary">Verified</Badge>
+                    <div>
+                      <h3 className="text-xl font-semibold flex items-center space-x-2">
+                        <span>{user?.user_metadata?.full_name || userData.name}</span>
+                        {userData.isVerified && (
+                          <Badge variant="secondary">Verified</Badge>
+                        )}
+                      </h3>
+                      <p className="text-muted-foreground">{user?.email || userData.email}</p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Member since {new Date(user?.created_at || userData.joinDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* user subscribed news sources */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium">Your Subscribed News Sources</h4>
+                    <p className="text-sm text-muted-foreground">
+                      News sources you follow (created by other users or the community)
+                    </p>
+                  </div>
+                  <div className="space-y-3">
+                    {subscribedSources.filter(source => source.isActive).map((source) => (
+                      <div key={source.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center">
+                            {source.type === "RSS" ? (
+                              <Rss className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Globe className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="font-medium">{source.name}</p>
+                            <p className="text-sm text-muted-foreground">{source.category}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline">{source.articlesCount} articles</Badge>
+                          {source.isPublic && (
+                            <Eye className="h-4 w-4 text-green-600" />
                           )}
-                        </h3>
-                        <p className="text-muted-foreground">{userData.email}</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Member since {new Date(userData.joinDate).toLocaleDateString()}
-                        </p>
+                          <div className="flex items-center space-x-1">
+                            <Switch
+                              checked={source.isActive}
+                              onCheckedChange={() => handleSubscriptionToggle(source.id)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleSubscriptionRemove(source.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
+                    ))}
+                    {subscribedSources.filter(source => source.isActive).length === 0 && (
+                      <p className="text-muted-foreground text-center py-4">
+                        No active subscriptions. Visit the community page to discover and subscribe to news sources created by other users.
+                      </p>
                     )}
                   </div>
                 </div>
 
-                <Separator />
-
-                {/* Bio */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Bio</label>
-                  {isEditing ? (
-                    <Textarea
-                      value={editedData.bio}
-                      onChange={(e) => setEditedData({...editedData, bio: e.target.value})}
-                      placeholder="Tell us about yourself..."
-                      rows={3}
-                    />
-                  ) : (
-                    <p className="text-muted-foreground">
-                      {userData.bio || "No bio provided"}
-                    </p>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Public Profile Settings */}
-                <div className="space-y-4">
-                  <h4 className="font-medium">Profile Visibility</h4>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Public Profile</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allow others to see your profile in the community
-                      </p>
-                    </div>
-                    <Switch
-                      checked={editedData.publicProfile}
-                      onCheckedChange={(checked) =>
-                        setEditedData({...editedData, publicProfile: checked})
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <p className="font-medium">Public News Sources</p>
-                      <p className="text-sm text-muted-foreground">
-                        Share your news sources with the community
-                      </p>
-                    </div>
-                    <Switch
-                      checked={editedData.publicSources}
-                      onCheckedChange={(checked) =>
-                        setEditedData({...editedData, publicSources: checked})
-                      }
-                    />
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
 
+          {/* user managed news sources */}
           <TabsContent value="sources" className="mt-8">
             <div className="space-y-6">
               {/* Header with Add Button */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                 <div>
-                  <h2 className="font-semibold text-lg">Your News Sources</h2>
+                  <h2 className="font-semibold text-lg">Your Managed News Sources</h2>
                   <p className="text-muted-foreground">
-                    Manage your news sources and RSS feeds
+                    News sources you created and own - other users can subscribe to these
                   </p>
                 </div>
                 <Dialog open={showAddSource} onOpenChange={setShowAddSource}>
@@ -315,22 +473,101 @@ export default function ProfilePage() {
                       Add Source
                     </Button>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Add News Source</DialogTitle>
                       <DialogDescription>
-                        Add a news website URL or RSS feed to your sources
+                        Add a news website URL or RSS feed to create a new source
                       </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
-                      <Input
-                        placeholder="https://example.com/feed or https://example.com"
-                        value={newSourceUrl}
-                        onChange={(e) => setNewSourceUrl(e.target.value)}
-                      />
-                      <div className="flex space-x-2">
-                        <Button onClick={handleAddSource} className="flex-1">
-                          <Plus className="h-4 w-4 mr-2" />
+                      <div>
+                        <label className="text-sm font-medium">URL *</label>
+                        <Input
+                          placeholder="https://example.com/feed or https://example.com"
+                          value={newSourceForm.url}
+                          onChange={(e) => handleUrlChange(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Title *</label>
+                        <Input
+                          placeholder="Source title"
+                          value={newSourceForm.title}
+                          onChange={(e) => setNewSourceForm(prev => ({ ...prev, title: e.target.value }))}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          placeholder="Brief description of the news source"
+                          value={newSourceForm.description}
+                          onChange={(e) => setNewSourceForm(prev => ({ ...prev, description: e.target.value }))}
+                          className="min-h-[80px]"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="text-sm font-medium">Category</label>
+                          <Select
+                            value={newSourceForm.category}
+                            onValueChange={(value) => setNewSourceForm(prev => ({ ...prev, category: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem key={category} value={category}>
+                                  {category}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <label className="text-sm font-medium">Language</label>
+                          <Select
+                            value={newSourceForm.language}
+                            onValueChange={(value) => setNewSourceForm(prev => ({ ...prev, language: value }))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {languages.map((lang) => (
+                                <SelectItem key={lang.code} value={lang.code}>
+                                  {lang.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={newSourceForm.isPublic}
+                          onCheckedChange={(checked) => setNewSourceForm(prev => ({ ...prev, isPublic: checked }))}
+                        />
+                        <label className="text-sm">Make this source public</label>
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-4">
+                        <Button
+                          onClick={handleAddSource}
+                          className="flex-1"
+                          disabled={isSubmitting || !newSourceForm.url.trim() || !newSourceForm.title.trim()}
+                        >
+                          {isSubmitting ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Plus className="h-4 w-4 mr-2" />
+                          )}
                           Add Source
                         </Button>
                         <Button variant="outline" onClick={() => setShowAddSource(false)}>
@@ -344,60 +581,61 @@ export default function ProfilePage() {
 
               {/* Sources List */}
               <div className="space-y-4">
-                {sources.map((source) => (
+                {managedSources.map((source) => (
                   <Card key={source.id}>
                     <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                            {source.type === "RSS" ? (
+                      <div className="flex flex-col space-y-3 sm:flex-row sm:items-start sm:justify-between sm:space-y-0">
+                        <div className="flex items-center space-x-3 min-w-0 flex-1">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                            {source.rss ? (
                               <Rss className="h-5 w-5 text-primary" />
                             ) : (
                               <Globe className="h-5 w-5 text-primary" />
                             )}
                           </div>
-                          <div>
-                            <CardTitle className="text-lg">{source.name}</CardTitle>
+                          <div className="min-w-0 flex-1">
+                            <CardTitle className="text-lg truncate">{source.title}</CardTitle>
                             <CardDescription className="flex items-center space-x-2">
-                              <LinkIcon className="h-3 w-3" />
-                              <span className="truncate max-w-md">{source.url}</span>
+                              <LinkIcon className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{source.link}</span>
                             </CardDescription>
                           </div>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-2 flex-shrink-0">
                           <Badge variant="outline">{source.category}</Badge>
-                          <Badge variant={source.isActive ? "default" : "secondary"}>
-                            {source.isActive ? "Active" : "Inactive"}
-                          </Badge>
+                          {/* <Badge variant={source.status === 'Activated' ? "default" : "secondary"}>
+                            {source.status === 'Activated' ? "Active" : "Inactive"}
+                          </Badge> */}
                         </div>
                       </div>
                     </CardHeader>
 
                     <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-                          <span>{source.articlesCount} articles</span>
+                      <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
+                          <span>{source.latest_crawled_num} articles</span>
                           <span>
-                            Updated {new Date(source.lastUpdated).toLocaleDateString()}
+                            Updated {new Date(source.latest_crawled_at).toLocaleDateString()}
                           </span>
+                          <span>{source.subscribers_num} subscribers</span>
                         </div>
 
-                        <div className="flex items-center space-x-4">
+                        <div className="flex flex-wrap items-center gap-3">
                           <div className="flex items-center space-x-2">
                             <Switch
-                              checked={source.isActive}
-                              onCheckedChange={() => handleToggleSource(source.id, "isActive")}
+                              checked={source.status === 'Activated'}
+                              onCheckedChange={() => handleManagedSourceToggle(source.id, "status")}
                             />
                             <span className="text-sm">Active</span>
                           </div>
 
                           <div className="flex items-center space-x-2">
                             <Switch
-                              checked={source.isPublic}
-                              onCheckedChange={() => handleToggleSource(source.id, "isPublic")}
+                              checked={source.is_public}
+                              onCheckedChange={() => handleManagedSourceToggle(source.id, "is_public")}
                             />
                             <span className="text-sm">Public</span>
-                            {source.isPublic ? (
+                            {source.is_public ? (
                               <Eye className="h-4 w-4 text-green-600" />
                             ) : (
                               <EyeOff className="h-4 w-4 text-muted-foreground" />
@@ -416,107 +654,25 @@ export default function ProfilePage() {
                     </CardContent>
                   </Card>
                 ))}
+
+                {managedSources.length === 0 && (
+                  <div className="text-center py-8">
+                    <Rss className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">No managed sources yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first news source by adding a website URL or RSS feed. Once created, other users can discover and subscribe to your sources.
+                    </p>
+                    <Button onClick={() => setShowAddSource(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Source
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </TabsContent>
 
-          <TabsContent value="preferences" className="mt-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Preferences</CardTitle>
-                    <CardDescription>
-                        Manage your application settings and notification preferences.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    {/* Language Settings */}
-                    <div className="space-y-4">
-                        <h4 className="font-medium">Language</h4>
-                        <div className="space-y-2">
-                           <label htmlFor="language-select" className="text-sm text-muted-foreground">
-                                Choose your preferred language for the interface and content.
-                           </label>
-                           <select
-                                id="language-select"
-                                value={editedData.language}
-                                onChange={(e) => setEditedData({...editedData, language: e.target.value})}
-                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                               <option value="en-US">English (United States)</option>
-                               <option value="en-GB">English (United Kingdom)</option>
-                               <option value="es-ES">Español (España)</option>
-                               <option value="fr-FR">Français</option>
-                               <option value="de-DE">Deutsch</option>
-                               <option value="ja-JP">日本語</option>
-                               <option value="zh-CN">中文 (简体)</option>
-                           </select>
-                        </div>
-                    </div>
 
-                    <Separator/>
-
-                    {/* Privacy Settings */}
-                     <div className="space-y-4">
-                        <h4 className="font-medium">Privacy</h4>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Public Profile</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Allow other users to see your profile and shared briefs.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={editedData.publicProfile}
-                                onCheckedChange={(checked) => setEditedData({...editedData, publicProfile: checked})}
-                            />
-                        </div>
-                         <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Share My Sources</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Allow the community to see the custom sources you add.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={editedData.publicSources}
-                                onCheckedChange={(checked) => setEditedData({...editedData, publicSources: checked})}
-                            />
-                        </div>
-                    </div>
-
-                    <Separator />
-
-                    {/* Notification Settings */}
-                    <div className="space-y-4">
-                        <h4 className="font-medium">Notifications & Briefs</h4>
-                         <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Email Delivery</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Receive your daily morning brief in your inbox.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={editedData.emailDelivery}
-                                onCheckedChange={(checked) => setEditedData({...editedData, emailDelivery: checked})}
-                            />
-                        </div>
-                         <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Community Sharing</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Get notified when someone shares a brief with you.
-                                </p>
-                            </div>
-                            <Switch
-                                checked={editedData.communitySharing}
-                                onCheckedChange={(checked) => setEditedData({...editedData, communitySharing: checked})}
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </div>
