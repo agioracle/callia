@@ -1,6 +1,5 @@
 "use client";
 
-import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
@@ -54,7 +53,6 @@ export default function BillingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8">
           <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">

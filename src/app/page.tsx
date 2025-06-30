@@ -1,4 +1,3 @@
-import Navigation from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +17,6 @@ import {
 export default function Home() {
   return (
     <div className="min-h-screen bg-background">
-      <Navigation />
-
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 px-4">
         <div className="container mx-auto max-w-6xl">

@@ -1,10 +1,52 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Chrome } from "lucide-react";
+import { signUp, signInWithGoogle } from "@/lib/auth";
 
 export default function SignupPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleEmailSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+    setMessage(null);
+
+    const { error } = await signUp(email, password, fullName);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setMessage("Check your email for the confirmation link!");
+      // Note: User will need to confirm email before being logged in
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleGoogleSignup = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const { error } = await signInWithGoogle();
+
+    if (error) {
+      setError(error.message);
+      setIsLoading(false);
+    }
+    // Note: Google OAuth will redirect, so no need to set loading to false
+  };
+
   return (
     <div className="flex items-center min-h-screen bg-background">
       <div className="container mx-auto max-w-sm">
@@ -19,37 +61,77 @@ export default function SignupPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name">Full Name</label>
-                <Input id="name" type="text" placeholder="John Doe" required />
+            {error && (
+              <div className="mb-4 p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+                {error}
               </div>
-              <div className="space-y-2">
-                <label htmlFor="email">Email</label>
-                <Input id="email" type="email" placeholder="name@example.com" required />
+            )}
+            {message && (
+              <div className="mb-4 p-3 text-sm text-green-600 bg-green-50 border border-green-200 rounded-md">
+                {message}
               </div>
-              <div className="space-y-2">
-                <label htmlFor="password">Password</label>
-                <Input id="password" type="password" required />
-              </div>
-              <Button type="submit" className="w-full">
-                Create Account
-              </Button>
-            </form>
+            )}
+
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignup}
+              disabled={isLoading}
+            >
+              <Chrome className="mr-2 h-4 w-4" />
+              Sign up with Google
+            </Button>
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
+                  Or continue with email
                 </span>
               </div>
             </div>
-            <Button variant="outline" className="w-full">
-              <Chrome className="mr-2 h-4 w-4" />
-              Sign up with Google
-            </Button>
+            <form className="space-y-4" onSubmit={handleEmailSignup}>
+              <div className="space-y-2">
+                <label htmlFor="name">Full Name</label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="email">Email</label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="password">Password</label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  minLength={6}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Creating Account..." : "Create Account"}
+              </Button>
+            </form>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
                 Already have an account?{" "}

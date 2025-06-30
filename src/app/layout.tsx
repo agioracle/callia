@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Newsreader, Noto_Sans } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
+import Navigation from "@/components/Navigation";
 
 const newsreader = Newsreader({
   variable: "--font-newsreader",
@@ -30,7 +32,10 @@ export default function RootLayout({
       <body
         className={`${newsreader.variable} ${notoSans.variable} font-sans antialiased`}
       >
-        {children}
+        <AuthProvider>
+          <Navigation />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
