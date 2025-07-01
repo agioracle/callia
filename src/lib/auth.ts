@@ -116,15 +116,69 @@ export const getUserSubscriptionsAlternative = async (userId: string) => {
 }
 
 export const toggleSubscriptionStatus = async (userId: string, newsSourceId: string, status: 'Subscribed' | 'Unsubscribed') => {
-  const { data, error } = await supabase
-    .from('user_subscription')
-    .upsert({
-      user_id: userId,
-      news_source_id: newsSourceId,
-      status: status
-    })
+  try {
+    // Check current subscription status
+    const { data: currentSubscription } = await supabase
+      .from('user_subscription')
+      .select('status')
+      .eq('user_id', userId)
+      .eq('news_source_id', newsSourceId)
+      .single()
 
-  return { data, error }
+    // Update subscription status
+    const { data, error: subscriptionError } = await supabase
+      .from('user_subscription')
+      .upsert({
+        user_id: userId,
+        news_source_id: newsSourceId,
+        status: status
+      })
+
+    if (subscriptionError) {
+      return { data, error: subscriptionError }
+    }
+
+    // Update subscribers_num based on status change
+    const previousStatus = currentSubscription?.status
+    let subscriberChange = 0
+
+    // Determine subscriber count change
+    if (previousStatus !== status) {
+      if (status === 'Subscribed' && previousStatus !== 'Subscribed') {
+        subscriberChange = 1 // New subscription or reactivating
+      } else if (status === 'Unsubscribed' && previousStatus === 'Subscribed') {
+        subscriberChange = -1 // Unsubscribing
+      }
+    }
+
+    // Update subscribers_num if there's a change
+    if (subscriberChange !== 0) {
+      const { data: newsSource, error: fetchError } = await supabase
+        .from('news_source')
+        .select('subscribers_num')
+        .eq('id', newsSourceId)
+        .single()
+
+      if (fetchError) {
+        return { data, error: fetchError }
+      }
+
+      const { error: updateError } = await supabase
+        .from('news_source')
+        .update({
+          subscribers_num: Math.max(0, newsSource.subscribers_num + subscriberChange)
+        })
+        .eq('id', newsSourceId)
+
+      if (updateError) {
+        return { data, error: updateError }
+      }
+    }
+
+    return { data, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
 }
 
 export const addUserSubscription = async (userId: string, newsSourceId: string) => {
@@ -133,20 +187,55 @@ export const addUserSubscription = async (userId: string, newsSourceId: string) 
     .insert({
       user_id: userId,
       news_source_id: newsSourceId,
-      status: 'active'
+      status: 'Activated'
     })
 
   return { data, error }
 }
 
 export const removeUserSubscription = async (userId: string, newsSourceId: string) => {
-  const { data, error } = await supabase
-    .from('user_subscription')
-    .update({ status: 'inactive' })
-    .eq('user_id', userId)
-    .eq('news_source_id', newsSourceId)
+  try {
+    // Update user subscription status
+    const { data, error: subscriptionError } = await supabase
+      .from('user_subscription')
+      .update({ status: 'Unsubscribed' })
+      .eq('user_id', userId)
+      .eq('news_source_id', newsSourceId)
 
-  return { data, error }
+    if (subscriptionError) {
+      return { data: null, error: subscriptionError }
+    }
+
+    // Decrement subscribers_num in news_source table
+    const { error: updateError } = await supabase
+      .rpc('decrement_subscribers', { news_source_id: newsSourceId })
+
+    if (updateError) {
+      // If the RPC function doesn't exist, fall back to manual update
+      const { data: newsSource, error: fetchError } = await supabase
+        .from('news_source')
+        .select('subscribers_num')
+        .eq('id', newsSourceId)
+        .single()
+
+      if (fetchError) {
+        return { data, error: fetchError }
+      }
+
+      const { error: manualUpdateError } = await supabase
+        .from('news_source')
+        .update({ subscribers_num: Math.max(0, newsSource.subscribers_num - 1) })
+        .eq('id', newsSourceId)
+
+      if (manualUpdateError) {
+        return { data, error: manualUpdateError }
+      }
+    }
+
+    return { data, error: null }
+  } catch (err) {
+    return { data: null, error: err }
+  }
 }
 
 // News Source Management Functions

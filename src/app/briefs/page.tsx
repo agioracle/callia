@@ -212,7 +212,7 @@ export default function BriefsPage() {
               Your Morning Briefs
             </h1>
             <p className="text-muted-foreground text-lg">
-              Access your personalized daily news from the past 30 days
+              Access your personalized daily briefs from the past 7 days
             </p>
           </div>
           <div className="flex items-center justify-center min-h-[400px]">
@@ -237,7 +237,7 @@ export default function BriefsPage() {
             Your Morning Briefs
           </h1>
           <p className="text-muted-foreground text-lg">
-            Access your personalized daily news from the past 30 days
+            Access your personalized daily briefs from the past 7 days
           </p>
         </div>
 
@@ -276,7 +276,7 @@ export default function BriefsPage() {
                   <CardTitle className="text-lg">
                     Morning Brief - {new Date(brief.date).toLocaleDateString('en-US', { weekday: 'long' })}
                   </CardTitle>
-                  <CardDescription>Your personalized daily news brief</CardDescription>
+                  <CardDescription>Your personalized daily briefs</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
