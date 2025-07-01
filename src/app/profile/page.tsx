@@ -66,6 +66,8 @@ type UserSubscription = {
 
 type NewSourceForm = {
   url: string;
+  link: string;
+  rss: string;
   title: string;
   description: string;
   category: string;
@@ -92,20 +94,13 @@ const userData = {
 
 const categories = [
   "Technology", "Business", "Science", "Politics", "Sports",
-  "Health", "Entertainment", "General", "Finance", "World News"
+  "Health", "Entertainment", "Travel", "Finance", "Climate",
+  "Games", "Arts", "General"
 ];
 
 const languages = [
-  { code: "en", name: "English" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "it", name: "Italian" },
-  { code: "pt", name: "Portuguese" },
-  { code: "ru", name: "Russian" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" }
+  { code: "English", name: "English" },
+  { code: "Chinese", name: "Chinese" },
 ];
 
 export default function ProfilePage() {
@@ -118,11 +113,13 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newSourceForm, setNewSourceForm] = useState<NewSourceForm>({
     url: "",
+    link: "",
+    rss: "",
     title: "",
     description: "",
     category: "General",
-    language: "en",
-    isPublic: false
+    language: "English",
+    isPublic: true
   });
   const { user } = useAuth();
 
@@ -277,9 +274,10 @@ export default function ProfilePage() {
         description: newSourceForm.description,
         language: newSourceForm.language,
         category: newSourceForm.category,
-        link: newSourceForm.url,
-        rss: isRSS ? newSourceForm.url : undefined,
-        is_public: newSourceForm.isPublic
+        link: isRSS ? "" : newSourceForm.url,
+        rss: isRSS ? newSourceForm.url : "",
+        is_public: newSourceForm.isPublic,
+        user_id: user.id
       };
 
       const { data, error } = await createNewsSource(user.id, newsSourceData);
@@ -290,11 +288,13 @@ export default function ProfilePage() {
         setManagedSources(sources => [data, ...sources]);
         setNewSourceForm({
           url: "",
+          link: "",
+          rss: "",
           title: "",
           description: "",
           category: "General",
-          language: "en",
-          isPublic: false
+          language: "English",
+          isPublic: true
         });
         setShowAddSource(false);
       }
@@ -482,7 +482,7 @@ export default function ProfilePage() {
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium">URL *</label>
+                        <label className="text-sm font-medium">RSS or Link URL *</label>
                         <Input
                           placeholder="https://example.com/feed or https://example.com"
                           value={newSourceForm.url}
@@ -500,7 +500,7 @@ export default function ProfilePage() {
                       </div>
 
                       <div>
-                        <label className="text-sm font-medium">Description</label>
+                        <label className="text-sm font-medium">Description *</label>
                         <Textarea
                           placeholder="Brief description of the news source"
                           value={newSourceForm.description}
@@ -511,7 +511,7 @@ export default function ProfilePage() {
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium">Category</label>
+                          <label className="text-sm font-medium">Category *</label>
                           <Select
                             value={newSourceForm.category}
                             onValueChange={(value) => setNewSourceForm(prev => ({ ...prev, category: value }))}
@@ -530,7 +530,7 @@ export default function ProfilePage() {
                         </div>
 
                         <div>
-                          <label className="text-sm font-medium">Language</label>
+                          <label className="text-sm font-medium">Language *</label>
                           <Select
                             value={newSourceForm.language}
                             onValueChange={(value) => setNewSourceForm(prev => ({ ...prev, language: value }))}
@@ -603,9 +603,6 @@ export default function ProfilePage() {
                         </div>
                         <div className="flex items-center space-x-2 flex-shrink-0">
                           <Badge variant="outline">{source.category}</Badge>
-                          {/* <Badge variant={source.status === 'Activated' ? "default" : "secondary"}>
-                            {source.status === 'Activated' ? "Active" : "Inactive"}
-                          </Badge> */}
                         </div>
                       </div>
                     </CardHeader>

@@ -176,17 +176,15 @@ export const createNewsSource = async (userId: string, newsSourceData: {
     .insert({
       title: newsSourceData.title,
       description: newsSourceData.description || '',
-      language: newsSourceData.language || 'en',
+      language: newsSourceData.language || 'English',
       category: newsSourceData.category || 'General',
-      link: newsSourceData.link,
-      rss: newsSourceData.rss || null,
-      tags: newsSourceData.tags || '',
+      link: newsSourceData.link || '',
+      rss: newsSourceData.rss || '',
+      tags: newsSourceData.tags || [''],
       user_id: userId,
-      is_public: newsSourceData.is_public || false,
-      subscribers_num: 0,
-      status: 'active',
-      latest_crawled_num: 0,
-      latest_crawled_at: new Date().toISOString()
+      is_public: newsSourceData.is_public || true,
+      subscribers_num: 1,
+      status: 'Activated'
     })
     .select()
     .single()
