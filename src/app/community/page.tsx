@@ -600,16 +600,16 @@ export default function CommunityPage() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="official" className="flex items-center">
-              <Star className="h-4 w-4 mr-2" />
+              <Star className="h-3 w-3 mr-1" />
               Official ({officialSources.length})
             </TabsTrigger>
             <TabsTrigger value="community" className="flex items-center">
-              <Users className="h-4 w-4 mr-2" />
+              <Users className="h-3 w-3 mr-1" />
               Community ({communitySources.length})
             </TabsTrigger>
             <TabsTrigger value="new" className="flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2" />
-              Newly Added ({newlySources.length})
+              <TrendingUp className="h-3 w-3 mr-1" />
+              New ({newlySources.length})
             </TabsTrigger>
           </TabsList>
 

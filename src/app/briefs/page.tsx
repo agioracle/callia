@@ -16,6 +16,8 @@ import {
   Lock,
   Download,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -25,7 +27,8 @@ import { useAuth } from "@/contexts/AuthContext";
 interface UserBrief {
   id: string;
   date: string;
-  audioUrl: string;
+  audio: string;
+  audioScript: string;
   textContent: string;
   sources: number;
 }
@@ -34,7 +37,7 @@ interface UserBrief {
 const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
   const { data, error } = await supabase
     .from('user_brief')
-    .select('user_id, brief_date, brief_content, news_source_ids')
+    .select('user_id, brief_date, brief_content, news_source_ids, brief_audio, brief_audio_script')
     .eq('user_id', userId)
     .order('brief_date', { ascending: false })
     .limit(7);
@@ -76,7 +79,8 @@ const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
     return {
       id: brief.user_id + '-' + brief.brief_date, // Create unique ID
       date: brief.brief_date,
-      audioUrl: parsedContent.audioUrl || "/audio/brief-placeholder.mp3",
+      audio: brief.brief_audio || "",
+      audioScript: brief.brief_audio_script || "",
       textContent: parsedContent.textContent || brief.brief_content,
       sources: sourcesCount,
     };
@@ -91,7 +95,67 @@ export default function BriefsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playingBriefId, setPlayingBriefId] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isScriptExpanded, setIsScriptExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Helper function to format time in MM:SS format
+  const formatTime = (timeInSeconds: number): string => {
+    if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // Calculate progress percentage
+  const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  // Handle seeking in audio
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (audioRef.current && duration > 0) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const seekTime = (clickX / rect.width) * duration;
+      audioRef.current.currentTime = seekTime;
+      setCurrentTime(seekTime);
+    }
+  };
+
+  // Handle audio download
+  const handleDownload = (brief: UserBrief) => {
+    if (!brief.audio) {
+      console.error('No audio data available for download');
+      return;
+    }
+
+    try {
+      // Convert base64 to blob
+      const byteCharacters = atob(brief.audio);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/mp3' });
+
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `morning-brief-${new Date(brief.date).toISOString().split('T')[0]}.mp3`;
+
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the URL object
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading audio:', error);
+    }
+  };
 
   // Fetch briefs when user is available
   useEffect(() => {
@@ -133,21 +197,51 @@ export default function BriefsPage() {
         audioRef.current.play();
         setIsPlaying(true);
       }
-    } else {
+        } else {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      const newAudio = new Audio(brief.audioUrl);
-      newAudio.oncanplay = () => {
-        newAudio.play();
-        setIsPlaying(true);
-        setPlayingBriefId(brief.id);
-      };
-      newAudio.onended = () => {
-        setIsPlaying(false);
-        setPlayingBriefId(null);
-      };
-      audioRef.current = newAudio;
+
+      // Reset progress when switching to different audio
+      setCurrentTime(0);
+      setDuration(0);
+
+      // Handle base64 audio data
+      if (brief.audio) {
+        // Create data URL from base64 audio data
+        const audioDataUrl = `data:audio/wav;base64,${brief.audio}`;
+        const newAudio = new Audio(audioDataUrl);
+
+        // Add event listeners for progress tracking
+        newAudio.onloadedmetadata = () => {
+          setDuration(newAudio.duration);
+        };
+
+        newAudio.ontimeupdate = () => {
+          setCurrentTime(newAudio.currentTime);
+        };
+
+        newAudio.oncanplay = () => {
+          newAudio.play();
+          setIsPlaying(true);
+          setPlayingBriefId(brief.id);
+        };
+
+        newAudio.onended = () => {
+          setIsPlaying(false);
+          setPlayingBriefId(null);
+          setCurrentTime(0);
+        };
+
+        newAudio.onerror = () => {
+          console.error('Audio playback error');
+          setIsPlaying(false);
+          setPlayingBriefId(null);
+          setCurrentTime(0);
+        };
+
+        audioRef.current = newAudio;
+      }
     }
   };
 
@@ -285,20 +379,22 @@ export default function BriefsPage() {
                       <span>{brief.sources} sources</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePlayPause(brief);
-                        }}
-                      >
-                        {playingBriefId === brief.id && isPlaying ? (
-                          <Pause className="h-4 w-4" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
+                      {brief.audio && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlayPause(brief);
+                          }}
+                        >
+                          {playingBriefId === brief.id && isPlaying ? (
+                            <Pause className="h-4 w-4" />
+                          ) : (
+                            <Play className="h-4 w-4" />
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -336,15 +432,17 @@ export default function BriefsPage() {
 
               <CardContent>
                 <Tabs defaultValue="text" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className={`grid w-full ${selectedBrief.audio ? 'grid-cols-2' : 'grid-cols-1'}`}>
                     <TabsTrigger value="text" className="flex items-center">
                       <FileText className="h-4 w-4 mr-2" />
                       Text Format
                     </TabsTrigger>
-                    <TabsTrigger value="audio" className="flex items-center">
-                      <Volume2 className="h-4 w-4 mr-2" />
-                      Audio Format
-                    </TabsTrigger>
+                    {selectedBrief.audio && (
+                      <TabsTrigger value="audio" className="flex items-center">
+                        <Volume2 className="h-4 w-4 mr-2" />
+                        Audio Format
+                      </TabsTrigger>
+                    )}
                   </TabsList>
 
                                     <TabsContent value="text" className="mt-6">
@@ -372,75 +470,129 @@ export default function BriefsPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="audio" className="mt-6">
-                    <div className="space-y-6">
-                      <Card className="bg-muted/50">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <Button
-                                size="lg"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePlayPause(selectedBrief);
-                                }}
-                              >
-                                {playingBriefId === selectedBrief.id && isPlaying ? (
-                                  <Pause className="h-5 w-5" />
-                                ) : (
-                                  <Play className="h-5 w-5" />
-                                )}
-                              </Button>
-                              <div>
-                                <p className="font-medium">Audio Brief</p>
-                                <p className="text-sm text-muted-foreground">
-                                  3 min • High quality AI voice
-                                </p>
+                  {selectedBrief.audio && (
+                    <TabsContent value="audio" className="mt-6">
+                      <div className="space-y-6">
+                        <Card className="bg-muted/50">
+                          <CardContent className="p-6">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-4">
+                                <Button
+                                  size="lg"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePlayPause(selectedBrief);
+                                  }}
+                                >
+                                  {playingBriefId === selectedBrief.id && isPlaying ? (
+                                    <Pause className="h-5 w-5" />
+                                  ) : (
+                                    <Play className="h-5 w-5" />
+                                  )}
+                                </Button>
+                                <div>
+                                  <p className="font-medium">Audio Brief</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {duration > 0 ? `${Math.ceil(duration / 60)} min` : '~3 min'} • High quality AI voice
+                                  </p>
+                                </div>
                               </div>
-                            </div>
-                            <Button variant="ghost" size="sm">
+                                                          <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(selectedBrief);
+                              }}
+                            >
                               <Download className="h-4 w-4 mr-2" />
                               Download
                             </Button>
-                          </div>
+                            </div>
 
-                          {/* Audio Progress Bar */}
-                          <div className="mt-4">
-                            <div className="w-full bg-muted rounded-full h-2">
-                              <div className="bg-primary h-2 rounded-full" style={{ width: '45%' }}></div>
+                                                        {/* Audio Progress Bar */}
+                            <div className="mt-4">
+                              <div
+                                className="w-full bg-muted rounded-full h-2 cursor-pointer"
+                                onClick={handleSeek}
+                              >
+                                <div
+                                  className="bg-primary h-2 rounded-full transition-all duration-200"
+                                  style={{ width: `${progressPercentage}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                                <span>{formatTime(currentTime)}</span>
+                                <span>{formatTime(duration)}</span>
+                              </div>
                             </div>
-                            <div className="flex justify-between text-sm text-muted-foreground mt-1">
-                              <span>1:23</span>
-                              <span>3:05</span>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                          </CardContent>
+                        </Card>
 
-                      <div className="text-center">
-                        <p className="text-muted-foreground mb-4">
-                          Listen to your brief while commuting, exercising, or multitasking
-                        </p>
-                        <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                          <div className="text-center">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                              <Volume2 className="h-6 w-6 text-primary" />
+                        <div className="text-center">
+                          <p className="text-muted-foreground mb-4">
+                            Listen to your brief while commuting, exercising, or multitasking
+                          </p>
+                          <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                            <div className="text-center">
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                                <Volume2 className="h-6 w-6 text-primary" />
+                              </div>
+                              <p className="text-sm font-medium">High Quality</p>
+                              <p className="text-xs text-muted-foreground">AI Voice</p>
                             </div>
-                            <p className="text-sm font-medium">High Quality</p>
-                            <p className="text-xs text-muted-foreground">AI Voice</p>
-                          </div>
-                          <div className="text-center">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
-                              <Download className="h-6 w-6 text-primary" />
+                            <div className="text-center">
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
+                                <Download className="h-6 w-6 text-primary" />
+                              </div>
+                              <p className="text-sm font-medium">Offline</p>
+                              <p className="text-xs text-muted-foreground">Download</p>
                             </div>
-                            <p className="text-sm font-medium">Offline</p>
-                            <p className="text-xs text-muted-foreground">Download</p>
+                                                      </div>
+
+                                                      {/* Audio Script Section */}
+                           {selectedBrief.audioScript && (
+                             <div className="mt-6">
+                               <div className="flex items-center">
+                                 <div className="flex-1 h-px bg-border"></div>
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={() => setIsScriptExpanded(!isScriptExpanded)}
+                                   className="mx-3 h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                 >
+                                   {isScriptExpanded ? (
+                                     <ChevronUp className="h-3 w-3 mr-1" />
+                                   ) : (
+                                     <ChevronDown className="h-3 w-3 mr-1" />
+                                   )}
+                                   Audio Script
+                                 </Button>
+                                 <div className="flex-1 h-px bg-border"></div>
+                               </div>
+
+                               {isScriptExpanded && (
+                                 <div className="mt-4">
+                                   <div className="prose max-w-none dark:prose-invert text-sm text-left">
+                                     <ReactMarkdown
+                                       remarkPlugins={[remarkGfm]}
+                                       components={{
+                                         p: ({...props}) => <p className="mb-2 text-muted-foreground text-left" {...props} />,
+                                         strong: ({...props}) => <strong className="font-medium text-foreground" {...props} />,
+                                       }}
+                                     >
+                                       {selectedBrief.audioScript}
+                                     </ReactMarkdown>
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                           )}
                           </div>
-                        </div>
                       </div>
-                    </div>
-                  </TabsContent>
+                    </TabsContent>
+                  )}
                 </Tabs>
               </CardContent>
             </Card>
