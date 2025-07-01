@@ -1,4 +1,4 @@
-# 📘 Callia: Morning Brew 产品需求文档（PRD）
+# 📘 Callia: Morning Briefings 产品需求文档（PRD）
 
 ## 📝 一、产品概述
 **Callia** 是一款基于 AI 的新闻聚合应用，旨在每日从指定的新闻网站和 RSS 源中提取最新资讯，并根据用户的选择，每天生成个性化的新闻摘要，用户可以在应用中查看和分享。

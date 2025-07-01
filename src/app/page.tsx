@@ -22,15 +22,15 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <Badge variant="secondary" className="text-sm px-4 py-2">
-              Callia: Your Personalized Morning Brew
+              Callia: Your Personalized Morning Briefings
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-              Your Personalized Daily News from the Past 30 Days
+              Your Personalized Daily Morning Briefs Powered by AI
             </h1>
 
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Access your personalized daily news from the past 30 days and make your content more impactful with Callia&apos;s morning briefings.
+              Access your personalized daily morning briefs and keep up with the latest news.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -101,7 +101,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Daily History</CardTitle>
                 <CardDescription>
-                  Access your past 30 days of morning briefings with full search and filtering capabilities.
+                  Access your past 15 days of morning briefings with full search and filtering capabilities.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -113,7 +113,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Community Sharing</CardTitle>
                 <CardDescription>
-                  Share your favorite briefings with the community and discover interesting news sources from others.
+                  Share and discover your favorite news sources with the community.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -125,7 +125,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Source Management</CardTitle>
                 <CardDescription>
-                  Easily manage your news sources, RSS feeds, and sharing preferences with granular privacy controls.
+                  Easily manage your news sources and subscriptions.
                 </CardDescription>
               </CardHeader>
             </Card>

@@ -66,7 +66,7 @@ export default function Navigation() {
                 Callia
               </span>
               <span className="text-muted-foreground text-sm ml-2">
-                Morning Brew
+                Morning brief
               </span>
             </div>
           </Link>

@@ -1,4 +1,4 @@
-# 📰 Callia: Morning Brew
+# 📰 Callia: Morning Briefings
 
 A modern, AI-powered news aggregation platform that delivers personalized daily morning briefs from your favorite news sources.
 

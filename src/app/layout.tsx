@@ -17,9 +17,9 @@ const notoSans = Noto_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Callia: Morning Brew - Personalized News Briefs",
-  description: "Get personalized daily morning news briefs from your favorite sources. AI-powered news aggregation delivered to your inbox and available in text and audio formats.",
-  keywords: ["news", "morning brief", "AI", "personalized", "daily news", "RSS"],
+  title: "Callia: Morning Briefings - Personalized News Briefs - AI-powered",
+  description: "Get personalized daily morning briefs from your favorite news sources. AI-powered news aggregation delivered to your inbox and available in text and audio formats.",
+  keywords: ["morning briefing", "morning brief", "morning brew", "personalized", "daily news", "AI-powered"],
 };
 
 export default function RootLayout({
