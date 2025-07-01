@@ -1,9 +1,12 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Footer from "@/components/Footer";
+import PricingPlans from "@/components/PricingPlans";
 import {
-  CheckCircle,
   Globe,
   Headphones,
   Users,
@@ -13,8 +16,10 @@ import {
   Shield,
   Sparkles
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -33,12 +38,12 @@ export default function Home() {
               Access your personalized daily morning briefs and keep up with the latest news.
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="px-8 py-6 text-lg">
+            <div className="flex flex-row gap-4 justify-center items-center">
+              <Button size="lg" className="px-8 py-6 text-lg" onClick={() => router.push('/briefs')}>
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="px-8 py-6 text-lg">
-                View Demo
+              <Button variant="outline" size="lg" className="px-8 py-6 text-lg" onClick={() => router.push('/community')}>
+                View Sources
               </Button>
             </div>
           </div>
@@ -50,10 +55,10 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need for Perfect Morning Briefings
+              Everything You Need for Perfect Morning Briefs
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From news crawling to audio generation, we&apos;ve got your morning briefings covered.
+              From news crawling to audio generation, we&apos;ve got your morning briefs covered.
             </p>
           </div>
 
@@ -227,126 +232,11 @@ export default function Home() {
       {/* Pricing Section */}
       <section className="py-20 bg-muted/30">
         <div className="container mx-auto max-w-4xl px-4">
-          <div className="text-center mb-16">
-            <h2 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
-              Choose Your Plan
-            </h2>
-            <p className="text-lg text-muted-foreground">
-              Start free and upgrade as your news consumption grows
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg">Free</CardTitle>
-                <div className="text-3xl font-bold">$0</div>
-                <CardDescription>Perfect for getting started</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">5 news sources</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Daily text briefings</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">7-day history</span>
-                  </div>
-                </div>
-                <Button className="w-full" variant="outline">
-                  Get Started
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-2 border-primary shadow-lg">
-              <CardHeader className="text-center">
-                <Badge className="w-fit mx-auto mb-2">Most Popular</Badge>
-                <CardTitle className="text-lg">Pro</CardTitle>
-                <div className="text-3xl font-bold">$9</div>
-                <CardDescription>For serious news consumers</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Unlimited news sources</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Text & audio briefings</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">30-day history</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Community sharing</span>
-                  </div>
-                </div>
-                <Button className="w-full">
-                  Start Free Trial
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-sm">
-              <CardHeader className="text-center">
-                <CardTitle className="text-lg">Enterprise</CardTitle>
-                <div className="text-3xl font-bold">$29</div>
-                <CardDescription>For teams and organizations</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Everything in Pro</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Team collaboration</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Custom integrations</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-600" />
-                    <span className="text-sm">Priority support</span>
-                  </div>
-                </div>
-                <Button className="w-full" variant="outline">
-                  Contact Sales
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
+          <PricingPlans />
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-12">
-        <div className="container mx-auto max-w-6xl px-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">C</span>
-              </div>
-              <span className="font-newsreader text-xl font-bold">Callia</span>
-              <span className="text-muted-foreground">Morning Brew</span>
-            </div>
-            <p className="text-muted-foreground text-sm">
-              © 2024 Callia. All rights reserved. Built with Next.js and Tailwind CSS.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

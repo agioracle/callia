@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Footer from "@/components/Footer";
 import {
   Play,
   Pause,
@@ -447,6 +448,7 @@ export default function BriefsPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

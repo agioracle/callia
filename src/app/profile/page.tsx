@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import Footer from "@/components/Footer";
 import {
   User,
   Globe,
@@ -672,6 +673,7 @@ export default function ProfilePage() {
 
         </Tabs>
       </div>
+      <Footer />
     </div>
   );
 }
