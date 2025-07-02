@@ -21,11 +21,11 @@ import {
   Rss,
   Link as LinkIcon,
   Plus,
-  CreditCard,
+  Settings,
   Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import Link from "next/link";
+
 import { useAuth } from "@/contexts/AuthContext";
 import {
   getUserSubscriptionsAlternative,
@@ -90,7 +90,7 @@ const userData = {
   autoGenerate: true,
   emailDelivery: true,
   communitySharing: true,
-  language: "en-US",
+  language: "English",
 };
 
 const categories = [
@@ -121,6 +121,10 @@ export default function ProfilePage() {
     category: "General",
     language: "English",
     isPublic: true
+  });
+  const [preferences, setPreferences] = useState({
+    emailDelivery: userData.emailDelivery,
+    briefLanguage: userData.language
   });
   const { user } = useAuth();
 
@@ -351,7 +355,7 @@ export default function ProfilePage() {
             Profile & Settings
           </h1>
           <p className="text-muted-foreground text-lg">
-            Manage your account, news sources, and privacy preferences
+            Manage your account, news sources, and preferences
           </p>
         </div>
 
@@ -365,8 +369,9 @@ export default function ProfilePage() {
               <Rss className="h-4 w-4 mr-2" />
               My Sources
             </TabsTrigger>
-            <TabsTrigger value="billing" className="flex items-center" asChild>
-              <Link href="/billing"><CreditCard className="h-4 w-4 mr-2" />Billing</Link>
+            <TabsTrigger value="preferences" className="flex items-center">
+              <Settings className="h-4 w-4 mr-2" />
+              Preferences
             </TabsTrigger>
           </TabsList>
 
@@ -670,6 +675,71 @@ export default function ProfilePage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="preferences" className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle>Preferences</CardTitle>
+                <CardDescription>
+                  Manage your notification and language preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Email Delivery Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <label className="text-sm font-medium">Email Delivery</label>
+                    <p className="text-sm text-muted-foreground">
+                      Receive daily brief summaries via email
+                    </p>
+                  </div>
+                  <Switch
+                    checked={preferences.emailDelivery}
+                    onCheckedChange={(checked) =>
+                      setPreferences(prev => ({ ...prev, emailDelivery: checked }))
+                    }
+                  />
+                </div>
+
+                <Separator />
+
+                {/* Brief Language Selection */}
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-sm font-medium">Brief Language</label>
+                    <p className="text-sm text-muted-foreground">
+                      Choose the language for your personalized brief summaries
+                    </p>
+                  </div>
+                  <Select
+                    value={preferences.briefLanguage}
+                    onValueChange={(value) =>
+                      setPreferences(prev => ({ ...prev, briefLanguage: value }))
+                    }
+                  >
+                    <SelectTrigger className="w-[200px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {languages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Separator />
+
+                {/* Save Button */}
+                <div className="flex justify-end">
+                  <Button>
+                    Save Preferences
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
         </Tabs>
       </div>

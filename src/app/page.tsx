@@ -104,9 +104,9 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Clock className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Daily History</CardTitle>
+                <CardTitle>Email Delivery</CardTitle>
                 <CardDescription>
-                  Access your past 15 days of morning briefings with full search and filtering capabilities.
+                  Receive your morning briefs directly to your inbox.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -146,7 +146,7 @@ export default function Home() {
               Loved by News Enthusiasts
             </h2>
             <p className="text-lg text-muted-foreground">
-              See what our users say about their morning briefing experience
+              See what our users say about their morning brief experiences
             </p>
           </div>
 

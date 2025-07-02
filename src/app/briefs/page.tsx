@@ -286,7 +286,7 @@ export default function BriefsPage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Please sign in to view your briefs</h2>
+              <h2 className="text-2xl font-bold mb-4">Please sign in to begin your morning brief journey</h2>
               <Button onClick={() => window.location.href = '/login'}>
                 Sign In
               </Button>
@@ -307,14 +307,14 @@ export default function BriefsPage() {
               Your Morning Briefs
             </h1>
             <p className="text-muted-foreground text-lg">
-              Access your personalized daily briefs from the past 7 days
+              Access your personalized daily briefs
             </p>
           </div>
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <h2 className="text-xl font-semibold mb-4">No briefs found</h2>
               <p className="text-muted-foreground">
-                Your daily briefs will appear here once they&apos;re generated.
+                Try to subscribe to some news sources and your daily briefs will appear here once they&apos;re generated.
               </p>
             </div>
           </div>
@@ -332,7 +332,7 @@ export default function BriefsPage() {
             Your Morning Briefs
           </h1>
           <p className="text-muted-foreground text-lg">
-            Access your personalized daily briefs from the past 7 days
+            Access your personalized daily briefs
           </p>
         </div>
 

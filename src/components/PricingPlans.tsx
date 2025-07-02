@@ -20,11 +20,12 @@ export const plansData: Plan[] = [
     description: "Perfect for getting started",
     features: [
       "Up to 5 news sources",
-      "Daily text briefings",
+      "Daily text briefs",
       "7-day free trial",
     ],
     cta: "Get Started",
-    variant: "outline",
+    isPopular: false,
+    variant: "default",
   },
   {
     name: "Pro",
@@ -32,13 +33,13 @@ export const plansData: Plan[] = [
     description: "For serious news consumers",
     features: [
       "Up to 50 news sources",
-      "Text & audio briefings",
-      "15-day history briefings",
+      "Text & audio briefs",
+      "7-day history briefs",
       "Community sharing",
     ],
-    cta: "Choose Plan",
+    cta: "Coming Soon",
     isPopular: true,
-    variant: "default",
+    variant: "outline",
   },
   {
     name: "Max",
@@ -47,10 +48,9 @@ export const plansData: Plan[] = [
     features: [
       "Everything in Pro",
       "Chat with AI",
-      "30-day history briefings",
       "Priority support",
     ],
-    cta: "Choose Plan",
+    cta: "Coming Soon",
     variant: "outline",
   },
 ];
