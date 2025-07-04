@@ -27,15 +27,15 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <Badge variant="secondary" className="text-sm px-4 py-2">
-              Callia: Personalized Morning Briefs
+              Callia: Morning Brief
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-              Your Personalized Daily Morning Briefs Powered by AI
+              Your Personalized Morning Briefings Powered by AI
             </h1>
 
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Keep up with the latest news with your personalized morning briefs.
+              Keep up with the latest news and trends with your daily morning briefings.
             </p>
 
             <div className="flex flex-row gap-4 justify-center items-center">
@@ -55,10 +55,10 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need for Perfect Morning Briefs
+              Everything You Need for Perfect Morning Briefings
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From news crawling to audio generation, we&apos;ve got your morning briefs covered.
+              From news crawling to audio generation, we&apos;ve got your morning briefings covered.
             </p>
           </div>
 

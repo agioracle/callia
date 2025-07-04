@@ -20,7 +20,7 @@ export const plansData: Plan[] = [
     description: "Perfect for getting started",
     features: [
       "Up to 5 news sources",
-      "Daily text briefs",
+      "Daily text briefings",
       "7-day free trial",
     ],
     cta: "Get Started",
@@ -33,8 +33,8 @@ export const plansData: Plan[] = [
     description: "For serious news consumers",
     features: [
       "Up to 50 news sources",
-      "Text & audio briefs",
-      "7-day history briefs",
+      "Text & audio briefings",
+      "7-day history briefings",
       "Community sharing",
     ],
     cta: "Coming Soon",

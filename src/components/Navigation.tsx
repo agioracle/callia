@@ -23,7 +23,8 @@ export default function Navigation() {
 
   const navigation = [
     { name: "Home", href: "/" },
-    { name: "My Briefs", href: "/briefs" },
+    { name: "Briefs", href: "/briefs" },
+    { name: "Podcasts", href: "/podcasts" },
     { name: "Discover Sources", href: "/community" },
     { name: "Pricing", href: "/billing" },
   ];
@@ -66,7 +67,7 @@ export default function Navigation() {
                 Callia
               </span>
               <span className="text-muted-foreground text-sm ml-2">
-                Morning brief
+                Morning Brief
               </span>
             </div>
           </Link>
