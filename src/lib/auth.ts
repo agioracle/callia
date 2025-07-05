@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 // Helper function to ensure user profile exists
-const ensureUserProfile = async (userId: string) => {
+const ensureUserProfile = async (userId: string, email: string) => {
   try {
     // Check if user profile already exists
     const { data: existingProfile, error: checkError } = await supabase
@@ -22,9 +22,11 @@ const ensureUserProfile = async (userId: string) => {
         .from('user_profile')
         .insert({
           user_id: userId,
-          enable_email_delivery: true,
+          email: email,
+          enable_email_delivery: false,
           brief_language: 'English',
-          join_date: new Date().toISOString()
+          join_date: new Date().toISOString(),
+          pricing_plan: 'Free',
         })
         .select()
         .single()
@@ -57,7 +59,7 @@ export const signUp = async (email: string, password: string, fullName: string) 
 
   // If sign up was successful and user was created, ensure user profile exists
   if (data?.user && !error) {
-    await ensureUserProfile(data.user.id)
+    await ensureUserProfile(data.user.id, email)
   }
 
   return { data, error }
@@ -71,7 +73,7 @@ export const signIn = async (email: string, password: string) => {
 
   // If sign in was successful, ensure user profile exists (in case of legacy users)
   if (data?.user && !error) {
-    await ensureUserProfile(data.user.id)
+    await ensureUserProfile(data.user.id, email)
   }
 
   return { data, error }
@@ -102,7 +104,7 @@ export const ensureCurrentUserProfile = async () => {
     return { error: userError || new Error('No user found') }
   }
 
-  return await ensureUserProfile(user.id)
+  return await ensureUserProfile(user.id, user?.email || '')
 }
 
 export const signOut = async () => {
@@ -439,7 +441,7 @@ export const extractSiteInfo = async (url: string) => {
 export const getUserProfile = async (userId: string) => {
   const { data, error } = await supabase
     .from('user_profile')
-    .select('enable_email_delivery, brief_language')
+    .select('user_id, email, enable_email_delivery, brief_language, join_date, pricing_plan')
     .eq('user_id', userId)
     .single()
 
