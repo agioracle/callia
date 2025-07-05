@@ -1,5 +1,49 @@
 import { supabase } from './supabase'
 
+// Helper function to ensure user profile exists
+const ensureUserProfile = async (userId: string) => {
+  try {
+    // Check if user profile already exists
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .eq('user_id', userId)
+      .single()
+
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 is "not found" error - other errors should be reported
+      console.error('Error checking user profile:', checkError)
+      return { error: checkError }
+    }
+
+    // If profile doesn't exist, create it
+    if (!existingProfile) {
+      const { data, error } = await supabase
+        .from('user_profile')
+        .insert({
+          user_id: userId,
+          enable_email_delivery: true,
+          brief_language: 'English',
+          join_date: new Date().toISOString()
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error('Error creating user profile:', error)
+        return { error }
+      }
+
+      return { data, error: null }
+    }
+
+    return { data: existingProfile, error: null }
+  } catch (err) {
+    console.error('Error in ensureUserProfile:', err)
+    return { error: err }
+  }
+}
+
 export const signUp = async (email: string, password: string, fullName: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -11,6 +55,11 @@ export const signUp = async (email: string, password: string, fullName: string) 
     },
   })
 
+  // If sign up was successful and user was created, ensure user profile exists
+  if (data?.user && !error) {
+    await ensureUserProfile(data.user.id)
+  }
+
   return { data, error }
 }
 
@@ -19,6 +68,11 @@ export const signIn = async (email: string, password: string) => {
     email,
     password,
   })
+
+  // If sign in was successful, ensure user profile exists (in case of legacy users)
+  if (data?.user && !error) {
+    await ensureUserProfile(data.user.id)
+  }
 
   return { data, error }
 }
@@ -31,7 +85,24 @@ export const signInWithGoogle = async () => {
     }
   })
 
+  // Note: For OAuth, we can't check user immediately here because the user
+  // will be redirected. The profile creation should be handled in the
+  // redirect callback or when the user session is established.
+  // You might want to add a useEffect in your app to handle this.
+
   return { data, error }
+}
+
+// Public helper function to ensure user profile exists
+// This can be called from components, especially after OAuth or when checking current user
+export const ensureCurrentUserProfile = async () => {
+  const { user, error: userError } = await getCurrentUser()
+
+  if (userError || !user) {
+    return { error: userError || new Error('No user found') }
+  }
+
+  return await ensureUserProfile(user.id)
 }
 
 export const signOut = async () => {

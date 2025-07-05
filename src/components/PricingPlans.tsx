@@ -47,6 +47,7 @@ export const plansData: Plan[] = [
     features: [
       "Everything in Pro",
       "Audio format briefings",
+      "Email delivery",
       "15-day history briefings",
       "Priority support",
     ],
@@ -106,7 +107,7 @@ export default function PricingPlans({
                   <div key={feature} className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className={`text-sm ${
-                      feature.includes("Audio format briefings")
+                      feature.includes("Audio format briefings") || feature.includes("Email delivery")
                         ? "font-bold text-primary"
                         : ""
                     }`}>
