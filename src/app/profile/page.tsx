@@ -36,7 +36,9 @@ import {
   updateNewsSource,
   deleteNewsSource,
   detectRSSFeed,
-  extractSiteInfo
+  extractSiteInfo,
+  getUserProfile,
+  updateUserProfile
 } from "@/lib/auth";
 
 // Define types for the data structure
@@ -81,15 +83,8 @@ const userData = {
   name: "John Doe",
   email: "john.doe@example.com",
   avatar: "/placeholder-avatar.jpg",
-  joinDate: "2024-01-01",
-  bio: "Tech enthusiast and startup founder interested in AI, climate change, and space exploration.",
-  isVerified: false,
-  publicProfile: true,
-  publicSources: false,
-  notificationsEnabled: true,
-  autoGenerate: true,
+  joinDate: "2025-01-01",
   emailDelivery: true,
-  communitySharing: true,
   language: "English",
 };
 
@@ -126,9 +121,10 @@ export default function ProfilePage() {
     emailDelivery: userData.emailDelivery,
     briefLanguage: userData.language
   });
+  const [preferencesSaving, setPreferencesSaving] = useState(false);
   const { user } = useAuth();
 
-  // Fetch user subscriptions and managed sources on component mount
+  // Fetch user subscriptions, managed sources, and profile preferences on component mount
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) {
@@ -137,10 +133,11 @@ export default function ProfilePage() {
       }
 
       try {
-        // Fetch subscriptions and managed sources in parallel
-        const [subscriptionsResult, managedSourcesResult] = await Promise.all([
+        // Fetch subscriptions, managed sources, and user profile in parallel
+        const [subscriptionsResult, managedSourcesResult, profileResult] = await Promise.all([
           getUserSubscriptionsAlternative(user.id),
-          getUserManagedNewsSources(user.id)
+          getUserManagedNewsSources(user.id),
+          getUserProfile(user.id)
         ]);
 
         if (subscriptionsResult.error) {
@@ -153,6 +150,16 @@ export default function ProfilePage() {
           setError(managedSourcesResult.error.message);
         } else {
           setManagedSources(managedSourcesResult.data || []);
+        }
+
+        if (profileResult.error) {
+          console.error('Error fetching user profile:', profileResult.error);
+          // Keep default values if profile fetch fails
+        } else if (profileResult.data) {
+          setPreferences({
+            emailDelivery: profileResult.data.enable_email_delivery,
+            briefLanguage: profileResult.data.brief_language
+          });
         }
       } catch (err) {
         setError('Failed to fetch data');
@@ -311,6 +318,35 @@ export default function ProfilePage() {
     }
   };
 
+  const handleSavePreferences = async () => {
+    if (!user?.id) return;
+
+    setPreferencesSaving(true);
+    try {
+      const { data, error } = await updateUserProfile(user.id, {
+        enable_email_delivery: preferences.emailDelivery,
+        brief_language: preferences.briefLanguage
+      });
+
+      if (error) {
+        setError('Failed to save preferences');
+        console.error('Error saving preferences:', error);
+      } else if (data) {
+        // Update local state with saved data
+        setPreferences({
+          emailDelivery: data.enable_email_delivery,
+          briefLanguage: data.brief_language
+        });
+        // Show success message (you could add a toast notification here)
+      }
+    } catch (err) {
+      setError('Failed to save preferences');
+      console.error('Error saving preferences:', err);
+    } finally {
+      setPreferencesSaving(false);
+    }
+  };
+
   // Convert subscriptions to the format expected by the existing UI
   const subscribedSources = subscriptions.map(sub => ({
     id: sub.news_source_id,
@@ -390,9 +426,6 @@ export default function ProfilePage() {
                     <div>
                       <h3 className="text-xl font-semibold flex items-center space-x-2">
                         <span>{user?.user_metadata?.full_name || userData.name}</span>
-                        {userData.isVerified && (
-                          <Badge variant="secondary">Verified</Badge>
-                        )}
                       </h3>
                       <p className="text-muted-foreground">{user?.email || userData.email}</p>
                       <p className="text-sm text-muted-foreground mt-1">
@@ -733,8 +766,15 @@ export default function ProfilePage() {
 
                 {/* Save Button */}
                 <div className="flex justify-end">
-                  <Button>
-                    Save Preferences
+                  <Button onClick={handleSavePreferences} disabled={preferencesSaving}>
+                    {preferencesSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Save Preferences'
+                    )}
                   </Button>
                 </div>
               </CardContent>

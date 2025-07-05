@@ -433,3 +433,29 @@ export const extractSiteInfo = async (url: string) => {
     category: 'General'
   }
 }
+
+// User Profile Preference Functions
+
+export const getUserProfile = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('user_profile')
+    .select('enable_email_delivery, brief_language')
+    .eq('user_id', userId)
+    .single()
+
+  return { data, error }
+}
+
+export const updateUserProfile = async (userId: string, updates: {
+  enable_email_delivery?: boolean
+  brief_language?: string
+}) => {
+  const { data, error } = await supabase
+    .from('user_profile')
+    .update(updates)
+    .eq('user_id', userId)
+    .select('enable_email_delivery, brief_language')
+    .single()
+
+  return { data, error }
+}
