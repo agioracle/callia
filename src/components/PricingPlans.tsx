@@ -15,7 +15,7 @@ export interface Plan {
 
 export const plansData: Plan[] = [
   {
-    name: "Free Trial",
+    name: "7-day Free Trial",
     price: "$0",
     description: "Perfect for getting started",
     features: [
@@ -25,32 +25,33 @@ export const plansData: Plan[] = [
     ],
     cta: "Get Started",
     isPopular: false,
-    variant: "default",
+    variant: "outline",
   },
   {
     name: "Pro",
     price: "$7.99",
     description: "For serious news consumers",
     features: [
-      "Up to 50 news sources",
-      "Text & audio briefings",
+      "Subscribe to up to 30 news sources",
+      "Daily text briefings",
       "7-day history briefings",
-      "Community sharing",
     ],
-    cta: "Coming Soon",
+    cta: "Choose Plan",
     isPopular: true,
-    variant: "outline",
+    variant: "default",
   },
   {
     name: "Max",
-    price: "$14.99",
-    description: "For teams and organizations",
+    price: "$9.99",
+    description: "For serious news consumers",
     features: [
       "Everything in Pro",
-      "Chat with AI",
+      "Audio format briefings",
+      "15-day history briefings",
       "Priority support",
     ],
     cta: "Coming Soon",
+    isPopular: false,
     variant: "outline",
   },
 ];
@@ -105,7 +106,7 @@ export default function PricingPlans({
                   <div key={feature} className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className={`text-sm ${
-                      feature.includes("Chat with AI")
+                      feature.includes("Audio format briefings")
                         ? "font-bold text-primary"
                         : ""
                     }`}>

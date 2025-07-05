@@ -37,7 +37,7 @@ interface UserBrief {
 const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
   const { data, error } = await supabase
     .from('user_brief')
-    .select('user_id, brief_date, brief_content, news_source_ids, brief_audio, brief_audio_script')
+    .select('user_id, brief_date, brief_content, news_source_ids, brief_audio_url, brief_audio_script')
     .eq('user_id', userId)
     .order('brief_date', { ascending: false })
     .limit(7);
@@ -79,7 +79,7 @@ const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
     return {
       id: brief.user_id + '-' + brief.brief_date, // Create unique ID
       date: brief.brief_date,
-      audio: brief.brief_audio || "",
+      audio: brief.brief_audio_url || "",
       audioScript: brief.brief_audio_script || "",
       textContent: parsedContent.textContent || brief.brief_content,
       sources: sourcesCount,
@@ -125,33 +125,21 @@ export default function BriefsPage() {
   // Handle audio download
   const handleDownload = (brief: UserBrief) => {
     if (!brief.audio) {
-      console.error('No audio data available for download');
+      console.error('No audio URL available for download');
       return;
     }
 
     try {
-      // Convert base64 to blob
-      const byteCharacters = atob(brief.audio);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'audio/mp3' });
-
-      // Create download link
-      const url = URL.createObjectURL(blob);
+      // Create download link directly from URL
       const link = document.createElement('a');
-      link.href = url;
+      link.href = brief.audio;
       link.download = `morning-brief-${new Date(brief.date).toISOString().split('T')[0]}.mp3`;
+      link.target = '_blank'; // Open in new tab to handle cross-origin issues
 
       // Trigger download
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-
-      // Clean up the URL object
-      URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error downloading audio:', error);
     }
@@ -206,11 +194,10 @@ export default function BriefsPage() {
       setCurrentTime(0);
       setDuration(0);
 
-      // Handle base64 audio data
+      // Handle audio URL
       if (brief.audio) {
-        // Create data URL from base64 audio data
-        const audioDataUrl = `data:audio/wav;base64,${brief.audio}`;
-        const newAudio = new Audio(audioDataUrl);
+        // Create Audio object directly from URL
+        const newAudio = new Audio(brief.audio);
 
         // Add event listeners for progress tracking
         newAudio.onloadedmetadata = () => {
@@ -534,7 +521,7 @@ export default function BriefsPage() {
                           <p className="text-muted-foreground mb-4">
                             Listen to your brief while commuting, exercising, or multitasking
                           </p>
-                          <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                          {/* <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
                             <div className="text-center">
                               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2">
                                 <Volume2 className="h-6 w-6 text-primary" />
@@ -549,9 +536,9 @@ export default function BriefsPage() {
                               <p className="text-sm font-medium">Offline</p>
                               <p className="text-xs text-muted-foreground">Download</p>
                             </div>
-                                                      </div>
+                          </div> */}
 
-                                                      {/* Audio Script Section */}
+                           {/* Audio Script Section */}
                            {selectedBrief.audioScript && (
                              <div className="mt-6">
                                <div className="flex items-center">

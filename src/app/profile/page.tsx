@@ -96,7 +96,7 @@ const userData = {
 const categories = [
   "Technology", "Business", "Science", "Politics", "Sports",
   "Health", "Entertainment", "Travel", "Finance", "Climate",
-  "Games", "Arts", "General"
+  "Games", "Arts", "Life", "General"
 ];
 
 const languages = [

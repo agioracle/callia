@@ -23,8 +23,8 @@ export default function Navigation() {
 
   const navigation = [
     { name: "Home", href: "/" },
-    { name: "Briefs", href: "/briefs" },
-    { name: "Podcasts", href: "/podcasts" },
+    { name: "My Briefs", href: "/briefs" },
+    // { name: "Podcasts", href: "/podcasts" },
     { name: "Discover Sources", href: "/community" },
     { name: "Pricing", href: "/billing" },
   ];
@@ -124,10 +124,10 @@ export default function Navigation() {
                         Profile & Settings
                       </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    {/* <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
                       Preferences
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
                       <LogOut className="mr-2 h-4 w-4" />

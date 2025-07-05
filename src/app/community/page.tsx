@@ -457,7 +457,7 @@ export default function CommunityPage() {
             Discover News Sources
           </h1>
           <p className="text-muted-foreground text-lg">
-            Follow official and community-recommended news sources to build your perfect brief.
+            Follow official and community-recommended news sources to build your perfect briefings.
           </p>
         </div>
 

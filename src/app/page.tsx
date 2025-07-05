@@ -27,7 +27,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <Badge variant="secondary" className="text-sm px-4 py-2">
-              Callia: Morning Brief
+              Callia: Intelligent Morning Brief
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
@@ -70,7 +70,7 @@ export default function Home() {
                 </div>
                 <CardTitle>News Crawling</CardTitle>
                 <CardDescription>
-                  Automatically crawl and aggregate news from your preferred sources and RSS feeds with intelligent filtering.
+                  Automatically crawl and aggregate news from your preferred news sources with intelligent filtering.
                 </CardDescription>
               </CardHeader>
             </Card>

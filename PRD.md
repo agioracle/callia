@@ -48,9 +48,9 @@
 * 用户可选择将单日的新闻摘要分享到社交媒体平台。
 
 ### 4.3 Brief Podcasts 页面
-* 每个用户轻松变成播客主理人，打造自己的 Biref Podcast，可播放、分享， 但仅可下载自己的 Brief Podcast。
-* 用户可选择将某天的 Brief 添加到自己的 Brief Podcast 中，或从自己的 Brief Podcast 中删除某天的 Brief。默认自动添加？
-* 用户可以在 Preferences 中控制自己的整个 Brief Podcast 是否公开可见（默认公开可见），以及 Podcast 名称、封面图、描述等。
+* 每个用户轻松变成 Podcast 主理人，打造自己的 Brief Podcast，可播放、分享和下载。
+* 每天的音频版 Brief 自动作为单集添加到用户的 Brief Podcast 中，用户可选择从自己的 Brief Podcast 中把某天的移除。
+* 用户可以设置自己的 Brief Podcast 是否公开可见，以及 Podcast 名称、封面图、描述等。公开可见的 Brief Podcast 会生成一个唯一 URL 供用户分享。
 
 
 ### 4.3 新闻信息源页面
