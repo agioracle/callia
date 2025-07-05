@@ -28,7 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   createNewsSource,
   detectRSSFeed,
-  extractSiteInfo
+  extractSiteInfo,
+  checkSubscriptionLimit
 } from "@/lib/auth";
 
 // TypeScript interface for news source data
@@ -127,6 +128,25 @@ export default function CommunityPage() {
 
     setIsSubmitting(true);
     try {
+      // Check subscription limits before creating new source
+      // (User automatically subscribes to sources they create)
+      const limitCheck = await checkSubscriptionLimit(user.id);
+
+      if (limitCheck.error) {
+        console.error('Error checking subscription limit:', limitCheck.error);
+        setError('Failed to check subscription limit. Please try again.');
+        return;
+      }
+
+      if (!limitCheck.canSubscribe) {
+        const pricingPlan = limitCheck.pricingPlan;
+        const limit = limitCheck.limit;
+        const currentCount = limitCheck.currentCount;
+
+        setError(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to add more sources.`);
+        return;
+      }
+
       // Detect if URL is RSS feed
       const isRSS = await detectRSSFeed(newSourceForm.url);
 
@@ -284,6 +304,26 @@ export default function CommunityPage() {
 
       const newSubscriptionStatus = !currentSource.isSubscribed;
       const status = newSubscriptionStatus ? 'Subscribed' : 'Unsubscribed';
+
+      // Check subscription limits when trying to subscribe
+      if (newSubscriptionStatus) {
+        const limitCheck = await checkSubscriptionLimit(user.id);
+
+        if (limitCheck.error) {
+          console.error('Error checking subscription limit:', limitCheck.error);
+          alert('Failed to check subscription limit. Please try again.');
+          return;
+        }
+
+        if (!limitCheck.canSubscribe) {
+          const pricingPlan = limitCheck.pricingPlan;
+          const limit = limitCheck.limit;
+          const currentCount = limitCheck.currentCount;
+
+          alert(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to subscribe to more sources.`);
+          return;
+        }
+      }
 
       // Check if subscription record exists
       const { data: existingSubscription } = await supabase

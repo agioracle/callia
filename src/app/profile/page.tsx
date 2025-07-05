@@ -38,7 +38,8 @@ import {
   detectRSSFeed,
   extractSiteInfo,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  checkSubscriptionLimit
 } from "@/lib/auth";
 
 // Define types for the data structure
@@ -278,6 +279,25 @@ export default function ProfilePage() {
 
     setIsSubmitting(true);
     try {
+      // Check subscription limits before creating new source
+      // (User automatically subscribes to sources they create)
+      const limitCheck = await checkSubscriptionLimit(user.id);
+
+      if (limitCheck.error) {
+        console.error('Error checking subscription limit:', limitCheck.error);
+        setError('Failed to check subscription limit. Please try again.');
+        return;
+      }
+
+      if (!limitCheck.canSubscribe) {
+        const pricingPlan = limitCheck.pricingPlan;
+        const limit = limitCheck.limit;
+        const currentCount = limitCheck.currentCount;
+
+        setError(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to add more sources.`);
+        return;
+      }
+
       // Detect if URL is RSS feed
       const isRSS = await detectRSSFeed(newSourceForm.url);
 

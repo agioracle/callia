@@ -461,3 +461,55 @@ export const updateUserProfile = async (userId: string, updates: {
 
   return { data, error }
 }
+
+// Get user's current subscription count
+export const getUserSubscriptionCount = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('user_subscription')
+    .select('news_source_id')
+    .eq('user_id', userId)
+    .eq('status', 'Subscribed')
+
+  if (error) {
+    return { count: 0, error }
+  }
+
+  return { count: data?.length || 0, error: null }
+}
+
+// Check subscription limits based on pricing plan
+export const checkSubscriptionLimit = async (userId: string) => {
+  try {
+    // Get user's pricing plan
+    const { data: userProfile, error: profileError } = await getUserProfile(userId)
+    if (profileError || !userProfile) {
+      return { canSubscribe: false, error: profileError || new Error('User profile not found') }
+    }
+
+    // Get current subscription count
+    const { count: currentCount, error: countError } = await getUserSubscriptionCount(userId)
+    if (countError) {
+      return { canSubscribe: false, error: countError }
+    }
+
+    // Define subscription limits based on pricing plan
+    const limits = {
+      'Free': 3,
+      'Pro': 30,
+      'Max': 30
+    }
+
+    const limit = limits[userProfile.pricing_plan as keyof typeof limits] || 0
+    const canSubscribe = currentCount < limit
+
+    return {
+      canSubscribe,
+      currentCount,
+      limit,
+      pricingPlan: userProfile.pricing_plan,
+      error: null
+    }
+  } catch (err) {
+    return { canSubscribe: false, error: err }
+  }
+}
