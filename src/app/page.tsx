@@ -68,9 +68,9 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Globe className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>News Crawling</CardTitle>
+                <CardTitle>Personalized Briefings</CardTitle>
                 <CardDescription>
-                  Automatically crawl and aggregate news from your preferred news sources with intelligent filtering.
+                  Get personalized morning briefings tailored to your subscriptions and preferences, cut through the news noise.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -82,7 +82,7 @@ export default function Home() {
                 </div>
                 <CardTitle>AI-Powered Summaries</CardTitle>
                 <CardDescription>
-                  Get concise, relevant summaries of the day&apos;s top stories tailored to your interests and preferences.
+                  Get concise, relevant summaries of the day&apos;s top stories, powered by AI.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -92,7 +92,7 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Headphones className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Audio Briefings</CardTitle>
+                <CardTitle>Audio format</CardTitle>
                 <CardDescription>
                   Listen to your morning briefings with high-quality AI-generated audio while commuting or exercising.
                 </CardDescription>
@@ -114,11 +114,11 @@ export default function Home() {
             <Card className="border-0 shadow-sm hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Users className="h-6 w-6 text-primary" />
+                  <Shield className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Community Sharing</CardTitle>
+                <CardTitle>Source Management</CardTitle>
                 <CardDescription>
-                  Share and discover your favorite news sources with the community.
+                  Easily manage your news sources and subscriptions. All controlled by you.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -126,11 +126,11 @@ export default function Home() {
             <Card className="border-0 shadow-sm hover:shadow-lg transition-shadow">
               <CardHeader>
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-primary" />
+                  <Users className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Source Management</CardTitle>
+                <CardTitle>Community Sharing</CardTitle>
                 <CardDescription>
-                  Easily manage your news sources and subscriptions.
+                  Share and discover your favorite news sources with the community.
                 </CardDescription>
               </CardHeader>
             </Card>

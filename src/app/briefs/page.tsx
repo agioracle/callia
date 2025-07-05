@@ -40,7 +40,7 @@ const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
     .select('user_id, brief_date, brief_content, news_source_ids, brief_audio_url, brief_audio_script')
     .eq('user_id', userId)
     .order('brief_date', { ascending: false })
-    .limit(7);
+    .limit(15);
 
   if (error) {
     console.error('Error fetching user briefs:', error);
