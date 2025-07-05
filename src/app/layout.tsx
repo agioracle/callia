@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Newsreader, Noto_Sans } from "next/font/google";
+import { Newsreader, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
@@ -10,10 +10,11 @@ const newsreader = Newsreader({
   display: "swap",
 });
 
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
+const notoSerifSC = Noto_Serif_SC({
+  variable: "--font-noto-serif-sc",
   subsets: ["latin"],
   display: "swap",
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -30,7 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${newsreader.variable} ${notoSans.variable} font-sans antialiased`}
+        className={`${newsreader.variable} ${notoSerifSC.variable} font-mixed antialiased`}
       >
         <AuthProvider>
           <Navigation />
