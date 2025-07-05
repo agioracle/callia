@@ -34,10 +34,10 @@ export const plansData: Plan[] = [
     features: [
       "Subscribe to up to 30 news sources",
       "Daily text briefings",
-      "7-day history briefings",
+      "15-day history briefings",
     ],
     cta: "Choose Plan",
-    isPopular: true,
+    isPopular: false,
     variant: "default",
   },
   {
@@ -47,12 +47,10 @@ export const plansData: Plan[] = [
     features: [
       "Everything in Pro",
       "Audio format briefings",
-      "Email delivery",
-      "15-day history briefings",
-      "Priority support",
+      "Email delivery"
     ],
     cta: "Coming Soon",
-    isPopular: false,
+    isPopular: true,
     variant: "outline",
   },
 ];
