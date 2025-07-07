@@ -19,13 +19,13 @@ export const plansData: Plan[] = [
     price: "$0",
     description: "Perfect for getting started",
     features: [
-      "Up to 5 news sources",
+      "Subscribe to up to 5 news sources",
       "Daily text briefings",
       "7-day free trial",
     ],
     cta: "Get Started",
     isPopular: false,
-    variant: "outline",
+    variant: "default",
   },
   {
     name: "Pro",
@@ -36,13 +36,13 @@ export const plansData: Plan[] = [
       "Daily text briefings",
       "15-day history briefings",
     ],
-    cta: "Choose Plan",
+    cta: "Coming Soon",
     isPopular: false,
-    variant: "default",
+    variant: "outline",
   },
   {
     name: "Max",
-    price: "$9.99",
+    price: "$11.99",
     description: "For serious news consumers",
     features: [
       "Everything in Pro",
@@ -50,7 +50,7 @@ export const plansData: Plan[] = [
       "Email delivery"
     ],
     cta: "Coming Soon",
-    isPopular: true,
+    isPopular: false,
     variant: "outline",
   },
 ];

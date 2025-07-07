@@ -7,7 +7,6 @@ import { Separator } from "@/components/ui/separator";
 import Footer from "@/components/Footer";
 import PricingPlans, { plansData } from "@/components/PricingPlans";
 import { useAuth } from "@/contexts/AuthContext";
-import { getUserProfile } from "@/lib/auth";
 import { useState, useEffect } from "react";
 
 interface UserProfile {
@@ -25,7 +24,7 @@ export default function BillingPage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch user profile when user is available
+    // Fetch user profile when user is available
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) {
@@ -33,18 +32,34 @@ export default function BillingPage() {
         return;
       }
 
+      // API helper functions inside useEffect to avoid dependency issues
+      const getAuthToken = async () => {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token;
+      };
+
+      const fetchUserProfileFromAPI = async () => {
+        const token = await getAuthToken();
+        if (!token) throw new Error('No authentication token available');
+
+        const response = await fetch('/api/profile/user', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch user profile');
+        return response.json();
+      };
+
       try {
         setProfileLoading(true);
-        const { data, error } = await getUserProfile(user.id);
-
-        if (error) {
-          setError(error.message);
-          console.error('Error fetching user profile:', error);
-        } else {
-          setUserProfile(data);
-        }
+        const data = await fetchUserProfileFromAPI();
+        setUserProfile(data);
       } catch (err) {
-        setError('Failed to fetch user profile');
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Failed to fetch user profile');
+        }
         console.error('Error fetching user profile:', err);
       } finally {
         setProfileLoading(false);

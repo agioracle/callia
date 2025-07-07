@@ -20,7 +20,6 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Types for brief data
@@ -33,58 +32,27 @@ interface UserBrief {
   sources: number;
 }
 
-// Function to fetch user briefs from Supabase
-const fetchUserBriefs = async (userId: string): Promise<UserBrief[]> => {
-  const { data, error } = await supabase
-    .from('user_brief')
-    .select('user_id, brief_date, brief_content, news_source_ids, brief_audio_url, brief_audio_script')
-    .eq('user_id', userId)
-    .order('brief_date', { ascending: false })
-    .limit(15);
+// Function to fetch user briefs from API
+const fetchUserBriefs = async (authToken: string): Promise<UserBrief[]> => {
+  try {
+    const response = await fetch('/api/briefs', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json',
+      },
+    })
 
-  if (error) {
-    console.error('Error fetching user briefs:', error);
-    return [];
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error fetching user briefs:', error)
+    return []
   }
-
-  // Transform the data from Supabase to match our UI structure
-  return data.map((brief) => {
-    let parsedContent;
-    try {
-      // Try to parse brief_content as JSON if it contains structured data
-      parsedContent = typeof brief.brief_content === 'string'
-        ? JSON.parse(brief.brief_content)
-        : brief.brief_content;
-    } catch {
-      // If not JSON, treat as plain text
-      parsedContent = { textContent: brief.brief_content };
-    }
-
-    // Calculate sources count from news_source_ids length
-    let sourcesCount = 0;
-    if (brief.news_source_ids) {
-      if (Array.isArray(brief.news_source_ids)) {
-        sourcesCount = brief.news_source_ids.length;
-      } else if (typeof brief.news_source_ids === 'string') {
-        try {
-          const parsedIds = JSON.parse(brief.news_source_ids);
-          sourcesCount = Array.isArray(parsedIds) ? parsedIds.length : 0;
-        } catch {
-          // If it's a comma-separated string, split and count
-          sourcesCount = brief.news_source_ids.split(',').filter(id => id.trim()).length;
-        }
-      }
-    }
-
-    return {
-      id: brief.user_id + '-' + brief.brief_date, // Create unique ID
-      date: brief.brief_date,
-      audio: brief.brief_audio_url || "",
-      audioScript: brief.brief_audio_script || "",
-      textContent: parsedContent.textContent || brief.brief_content,
-      sources: sourcesCount,
-    };
-  });
 };
 
 export default function BriefsPage() {
@@ -156,7 +124,16 @@ export default function BriefsPage() {
       try {
         setLoading(true);
         setError(null);
-        const userBriefs = await fetchUserBriefs(user.id);
+
+        // Get the current session to extract the access token
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.access_token) {
+          throw new Error('No access token available');
+        }
+
+        const userBriefs = await fetchUserBriefs(session.access_token);
         setBriefs(userBriefs);
         if (userBriefs.length > 0) {
           setSelectedBrief(userBriefs[0]);

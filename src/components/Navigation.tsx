@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Bell, Menu, User, Settings, LogOut, X } from "lucide-react";
+import { Bell, Menu, User, LogOut, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navigation() {

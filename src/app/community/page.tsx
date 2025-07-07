@@ -23,13 +23,10 @@ import {
   Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  createNewsSource,
   detectRSSFeed,
-  extractSiteInfo,
-  checkSubscriptionLimit
+  extractSiteInfo
 } from "@/lib/auth";
 
 // TypeScript interface for news source data
@@ -64,7 +61,81 @@ interface NewSourceForm {
   isPublic: boolean;
 }
 
-const OFFICIAL_USER_ID = 'fb8e9571-9d4d-401b-893c-c67891a2d99e';
+
+
+// API helper functions
+const getAuthToken = async () => {
+  const { supabase } = await import('@/lib/supabase');
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token;
+};
+
+const fetchNewsSources = async () => {
+  const response = await fetch('/api/community/sources');
+  if (!response.ok) {
+    throw new Error('Failed to fetch news sources');
+  }
+  return response.json();
+};
+
+const subscribeToSource = async (sourceId: string, action: 'subscribe' | 'unsubscribe') => {
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token available');
+  }
+
+  const response = await fetch('/api/community/subscribe', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ sourceId, action }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update subscription');
+  }
+
+  return response.json();
+};
+
+interface CreateNewsSourceData {
+  title: string
+  description: string
+  language: string
+  category: string
+  link: string
+  rss: string
+  is_public: boolean
+}
+
+const createNewsSourceAPI = async (newsSourceData: CreateNewsSourceData) => {
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token available');
+  }
+
+  const response = await fetch('/api/profile/sources', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'create',
+      newsSourceData
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create news source');
+  }
+
+  return response.json();
+};
 
 const categories = [
   "Technology", "Business", "Science", "Politics", "Sports",
@@ -128,25 +199,6 @@ export default function CommunityPage() {
 
     setIsSubmitting(true);
     try {
-      // Check subscription limits before creating new source
-      // (User automatically subscribes to sources they create)
-      const limitCheck = await checkSubscriptionLimit(user.id);
-
-      if (limitCheck.error) {
-        console.error('Error checking subscription limit:', limitCheck.error);
-        setError('Failed to check subscription limit. Please try again.');
-        return;
-      }
-
-      if (!limitCheck.canSubscribe) {
-        const pricingPlan = limitCheck.pricingPlan;
-        const limit = limitCheck.limit;
-        const currentCount = limitCheck.currentCount;
-
-        setError(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to add more sources.`);
-        return;
-      }
-
       // Detect if URL is RSS feed
       const isRSS = await detectRSSFeed(newSourceForm.url);
 
@@ -157,126 +209,54 @@ export default function CommunityPage() {
         category: newSourceForm.category,
         link: isRSS ? "" : newSourceForm.url,
         rss: isRSS ? newSourceForm.url : "",
-        is_public: newSourceForm.isPublic,
-        user_id: user.id
+        is_public: newSourceForm.isPublic
       };
 
-      const { data, error } = await createNewsSource(user.id, newsSourceData);
+      await createNewsSourceAPI(newsSourceData);
 
-      if (error) {
-        setError(error.message);
-      } else if (data) {
-        // Reset form and close dialog
-        setNewSourceForm({
-          url: "",
-          link: "",
-          rss: "",
-          title: "",
-          description: "",
-          category: "General",
-          language: "English",
-          isPublic: true
-        });
-        setShowAddSource(false);
+      // Reset form and close dialog
+      setNewSourceForm({
+        url: "",
+        link: "",
+        rss: "",
+        title: "",
+        description: "",
+        category: "General",
+        language: "English",
+        isPublic: true
+      });
+      setShowAddSource(false);
 
-        // Refresh data to show the new source
-        window.location.reload();
-      }
+      // Refresh data to show the new source
+      window.location.reload();
     } catch (err) {
-      setError('Failed to add source');
+      if (err instanceof Error) {
+        if (err.message.includes('Subscription limit reached')) {
+          setError('You have reached your subscription limit. Please upgrade your plan to add more sources.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to add source');
+      }
       console.error('Error adding source:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Fetch user subscriptions for the current user
-  const fetchUserSubscriptions = async (sourceIds: string[]): Promise<Map<string, boolean>> => {
-    if (!user || sourceIds.length === 0) {
-      return new Map();
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from('user_subscription')
-        .select('news_source_id, status')
-        .eq('user_id', user.id)
-        .in('news_source_id', sourceIds);
-
-      if (error) throw error;
-
-      const subscriptionMap = new Map<string, boolean>();
-      data?.forEach(sub => {
-        subscriptionMap.set(sub.news_source_id, sub.status === 'Subscribed');
-      });
-
-      return subscriptionMap;
-    } catch (err) {
-      console.error('Error fetching user subscriptions:', err);
-      return new Map();
-    }
-  };
-
-  // Add subscription status to sources
-  const addSubscriptionStatus = async (sources: Omit<NewsSource, 'isSubscribed'>[]): Promise<NewsSource[]> => {
-    const sourceIds = sources.map(s => s.id);
-    const subscriptionMap = await fetchUserSubscriptions(sourceIds);
-
-    return sources.map(source => ({
-      ...source,
-      isSubscribed: subscriptionMap.get(source.id) || false
-    }));
-  };
-
-  // Fetch news sources from Supabase
+  // Fetch news sources from API
   useEffect(() => {
-    async function fetchNewsSources() {
+    async function loadNewsSources() {
       try {
         setLoading(true);
+        setError(null);
 
-        // Fetch official sources (added by specific user)
-        const { data: officialData, error: officialError } = await supabase
-          .from('news_source')
-          .select('*')
-          .eq('is_public', true)
-          .eq('status', 'Activated')
-          .eq('user_id', OFFICIAL_USER_ID)
-          .order('subscribers_num', { ascending: false });
+        const data = await fetchNewsSources();
 
-        if (officialError) throw officialError;
-
-        // Fetch community sources (added by other users)
-        const { data: communityData, error: communityError } = await supabase
-          .from('news_source')
-          .select('*')
-          .eq('is_public', true)
-          .eq('status', 'Activated')
-          .neq('user_id', OFFICIAL_USER_ID)
-          .order('subscribers_num', { ascending: false });
-
-        if (communityError) throw communityError;
-
-        // Fetch newly added sources (latest 9, regardless of who added them)
-        const { data: newlyData, error: newlyError } = await supabase
-          .from('news_source')
-          .select('*')
-          .eq('is_public', true)
-          .eq('status', 'Activated')
-          .order('created_at', { ascending: false })
-          .limit(9);
-
-        if (newlyError) throw newlyError;
-
-        // Add subscription status to each category
-        const [officialWithSubs, communityWithSubs, newlyWithSubs] = await Promise.all([
-          addSubscriptionStatus(officialData || []),
-          addSubscriptionStatus(communityData || []),
-          addSubscriptionStatus(newlyData || [])
-        ]);
-
-        setOfficialSources(officialWithSubs);
-        setCommunitySources(communityWithSubs);
-        setNewlySources(newlyWithSubs);
+        setOfficialSources(data.official || []);
+        setCommunitySources(data.community || []);
+        setNewlySources(data.newly || []);
       } catch (err) {
         console.error('Error fetching news sources:', err);
         setError('Failed to load news sources');
@@ -285,12 +265,11 @@ export default function CommunityPage() {
       }
     }
 
-    fetchNewsSources();
+    loadNewsSources();
   }, [user]);
 
-    const handleSubscribe = async (sourceId: string) => {
+  const handleSubscribe = async (sourceId: string) => {
     if (!user) {
-      // TODO: Redirect to login or show login modal
       alert('Please log in to subscribe to sources');
       return;
     }
@@ -302,77 +281,26 @@ export default function CommunityPage() {
 
       if (!currentSource) return;
 
-      const newSubscriptionStatus = !currentSource.isSubscribed;
-      const status = newSubscriptionStatus ? 'Subscribed' : 'Unsubscribed';
+      const action = currentSource.isSubscribed ? 'unsubscribe' : 'subscribe';
 
-      // Check subscription limits when trying to subscribe
-      if (newSubscriptionStatus) {
-        const limitCheck = await checkSubscriptionLimit(user.id);
+      const result = await subscribeToSource(sourceId, action);
 
-        if (limitCheck.error) {
-          console.error('Error checking subscription limit:', limitCheck.error);
-          alert('Failed to check subscription limit. Please try again.');
-          return;
+      if (result.error) {
+        if (result.error === 'Subscription limit reached') {
+          alert(`You have reached your subscription limit. Your ${result.pricingPlan} plan allows up to ${result.limit} subscriptions. You currently have ${result.currentCount} subscriptions. Please upgrade your plan to subscribe to more sources.`);
+        } else {
+          alert(result.error);
         }
-
-        if (!limitCheck.canSubscribe) {
-          const pricingPlan = limitCheck.pricingPlan;
-          const limit = limitCheck.limit;
-          const currentCount = limitCheck.currentCount;
-
-          alert(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to subscribe to more sources.`);
-          return;
-        }
+        return;
       }
-
-      // Check if subscription record exists
-      const { data: existingSubscription } = await supabase
-        .from('user_subscription')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('news_source_id', sourceId)
-        .single();
-
-      if (existingSubscription) {
-        // Update existing subscription
-        const { error } = await supabase
-          .from('user_subscription')
-          .update({ status })
-          .eq('user_id', user.id)
-          .eq('news_source_id', sourceId);
-
-        if (error) throw error;
-      } else {
-        // Create new subscription record
-        const { error } = await supabase
-          .from('user_subscription')
-          .insert({
-            user_id: user.id,
-            news_source_id: sourceId,
-            status
-          });
-
-        if (error) throw error;
-      }
-
-      // Update subscribers_num in news_source table
-      const subscriberChange = newSubscriptionStatus ? 1 : -1;
-      const { error: updateError } = await supabase
-        .from('news_source')
-        .update({
-          subscribers_num: currentSource.subscribers_num + subscriberChange
-        })
-        .eq('id', sourceId);
-
-      if (updateError) throw updateError;
 
       // Update local state
       const updateSources = (sources: NewsSource[]) =>
         sources.map(source =>
           source.id === sourceId ? {
             ...source,
-            isSubscribed: newSubscriptionStatus,
-            subscribers_num: source.subscribers_num + subscriberChange
+            isSubscribed: result.isSubscribed,
+            subscribers_num: result.newSubscriberCount
           } : source
         );
 

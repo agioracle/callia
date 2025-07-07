@@ -28,18 +28,8 @@ import { useState, useEffect } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import {
-  getUserSubscriptionsAlternative,
-  toggleSubscriptionStatus,
-  removeUserSubscription,
-  getUserManagedNewsSources,
-  createNewsSource,
-  updateNewsSource,
-  deleteNewsSource,
   detectRSSFeed,
-  extractSiteInfo,
-  getUserProfile,
-  updateUserProfile,
-  checkSubscriptionLimit
+  extractSiteInfo
 } from "@/lib/auth";
 
 // Define types for the data structure
@@ -100,6 +90,146 @@ const languages = [
   { code: "Chinese", name: "Chinese" },
 ];
 
+// API helper functions
+const getAuthToken = async () => {
+  const { supabase } = await import('@/lib/supabase');
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.access_token;
+};
+
+const fetchUserSubscriptions = async () => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/subscriptions', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error('Failed to fetch subscriptions');
+  return response.json();
+};
+
+const fetchManagedSources = async () => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/sources', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error('Failed to fetch managed sources');
+  return response.json();
+};
+
+const fetchUserProfile = async () => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/user', {
+    headers: { 'Authorization': `Bearer ${token}` }
+  });
+  if (!response.ok) throw new Error('Failed to fetch user profile');
+  return response.json();
+};
+
+const updateSubscription = async (newsSourceId: string, action: 'toggle' | 'remove') => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/subscriptions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ newsSourceId, action })
+  });
+  if (!response.ok) throw new Error('Failed to update subscription');
+  return response.json();
+};
+
+interface SourceUpdates {
+  status?: string;
+  is_public?: boolean;
+}
+
+interface CreateSourceData {
+  title: string;
+  description: string;
+  language: string;
+  category: string;
+  link: string;
+  rss: string;
+  is_public: boolean;
+}
+
+interface ProfileUpdates {
+  enable_email_delivery?: boolean;
+  brief_language?: string;
+}
+
+const updateManagedSource = async (sourceId: string, updates: SourceUpdates) => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/sources', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: 'update', sourceId, updates })
+  });
+  if (!response.ok) throw new Error('Failed to update source');
+  return response.json();
+};
+
+const deleteManagedSource = async (sourceId: string) => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/sources', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: 'delete', sourceId })
+  });
+  if (!response.ok) throw new Error('Failed to delete source');
+  return response.json();
+};
+
+const createManagedSource = async (newsSourceData: CreateSourceData) => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/sources', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ action: 'create', newsSourceData })
+  });
+  if (!response.ok) throw new Error('Failed to create source');
+  return response.json();
+};
+
+const saveUserProfile = async (updates: ProfileUpdates) => {
+  const token = await getAuthToken();
+  if (!token) throw new Error('No authentication token available');
+
+  const response = await fetch('/api/profile/user', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(updates)
+  });
+  if (!response.ok) throw new Error('Failed to save profile');
+  return response.json();
+};
+
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
@@ -134,32 +264,23 @@ export default function ProfilePage() {
       }
 
       try {
+        setLoading(true);
+        setError(null);
+
         // Fetch subscriptions, managed sources, and user profile in parallel
-        const [subscriptionsResult, managedSourcesResult, profileResult] = await Promise.all([
-          getUserSubscriptionsAlternative(user.id),
-          getUserManagedNewsSources(user.id),
-          getUserProfile(user.id)
+        const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
+          fetchUserSubscriptions(),
+          fetchManagedSources(),
+          fetchUserProfile()
         ]);
 
-        if (subscriptionsResult.error) {
-          setError(subscriptionsResult.error.message);
-        } else {
-          setSubscriptions(subscriptionsResult.data || []);
-        }
+        setSubscriptions(subscriptionsData || []);
+        setManagedSources(managedSourcesData || []);
 
-        if (managedSourcesResult.error) {
-          setError(managedSourcesResult.error.message);
-        } else {
-          setManagedSources(managedSourcesResult.data || []);
-        }
-
-        if (profileResult.error) {
-          console.error('Error fetching user profile:', profileResult.error);
-          // Keep default values if profile fetch fails
-        } else if (profileResult.data) {
+        if (profileData) {
           setPreferences({
-            emailDelivery: profileResult.data.enable_email_delivery,
-            briefLanguage: profileResult.data.brief_language
+            emailDelivery: profileData.enable_email_delivery,
+            briefLanguage: profileData.brief_language
           });
         }
       } catch (err) {
@@ -198,15 +319,12 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      const subscription = subscriptions.find(s => s.news_source_id === newsSourceId);
-      const newStatus = subscription?.status === 'Subscribed' ? 'Unsubscribed' : 'Subscribed';
-
-      await toggleSubscriptionStatus(user.id, newsSourceId, newStatus);
+      const result = await updateSubscription(newsSourceId, 'toggle');
 
       setSubscriptions(subs =>
         subs.map(sub =>
           sub.news_source_id === newsSourceId
-            ? { ...sub, status: newStatus }
+            ? { ...sub, status: result.newStatus }
             : sub
         )
       );
@@ -219,7 +337,7 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      await removeUserSubscription(user.id, newsSourceId);
+      await updateSubscription(newsSourceId, 'remove');
       setSubscriptions(subs => subs.filter(sub => sub.news_source_id !== newsSourceId));
     } catch {
       setError('Failed to remove subscription');
@@ -235,7 +353,7 @@ export default function ProfilePage() {
         const source = managedSources.find(s => s.id === sourceId);
         const newStatus = source?.status === 'Activated' ? 'Deactivated' : 'Activated';
 
-        await updateNewsSource(sourceId, user.id, { status: newStatus });
+        await updateManagedSource(sourceId, { status: newStatus });
 
         setManagedSources(sources =>
           sources.map(source =>
@@ -248,7 +366,7 @@ export default function ProfilePage() {
         const source = managedSources.find(s => s.id === sourceId);
         const newIsPublic = !source?.is_public;
 
-        await updateNewsSource(sourceId, user.id, { is_public: newIsPublic });
+        await updateManagedSource(sourceId, { is_public: newIsPublic });
 
         setManagedSources(sources =>
           sources.map(source =>
@@ -267,71 +385,55 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      await deleteNewsSource(sourceId, user.id);
+      await deleteManagedSource(sourceId);
       setManagedSources(sources => sources.filter(source => source.id !== sourceId));
     } catch {
       setError('Failed to delete source');
     }
   };
 
-    const handleAddSource = async () => {
+  const handleAddSource = async () => {
     if (!user?.id || !newSourceForm.url.trim()) return;
 
     setIsSubmitting(true);
     try {
-      // Check subscription limits before creating new source
-      // (User automatically subscribes to sources they create)
-      const limitCheck = await checkSubscriptionLimit(user.id);
-
-      if (limitCheck.error) {
-        console.error('Error checking subscription limit:', limitCheck.error);
-        setError('Failed to check subscription limit. Please try again.');
-        return;
-      }
-
-      if (!limitCheck.canSubscribe) {
-        const pricingPlan = limitCheck.pricingPlan;
-        const limit = limitCheck.limit;
-        const currentCount = limitCheck.currentCount;
-
-        setError(`You have reached your subscription limit. Your ${pricingPlan} plan allows up to ${limit} subscriptions. You currently have ${currentCount} subscriptions. Please upgrade your plan to add more sources.`);
-        return;
-      }
-
       // Detect if URL is RSS feed
       const isRSS = await detectRSSFeed(newSourceForm.url);
 
-      const newsSourceData = {
+      const newsSourceData: CreateSourceData = {
         title: newSourceForm.title || 'Untitled Source',
         description: newSourceForm.description,
         language: newSourceForm.language,
         category: newSourceForm.category,
         link: isRSS ? "" : newSourceForm.url,
         rss: isRSS ? newSourceForm.url : "",
-        is_public: newSourceForm.isPublic,
-        user_id: user.id
+        is_public: newSourceForm.isPublic
       };
 
-      const { data, error } = await createNewsSource(user.id, newsSourceData);
+      const data = await createManagedSource(newsSourceData);
 
-      if (error) {
-        setError(error.message);
-      } else if (data) {
-        setManagedSources(sources => [data, ...sources]);
-        setNewSourceForm({
-          url: "",
-          link: "",
-          rss: "",
-          title: "",
-          description: "",
-          category: "General",
-          language: "English",
-          isPublic: true
-        });
-        setShowAddSource(false);
-      }
+      setManagedSources(sources => [data, ...sources]);
+      setNewSourceForm({
+        url: "",
+        link: "",
+        rss: "",
+        title: "",
+        description: "",
+        category: "General",
+        language: "English",
+        isPublic: true
+      });
+      setShowAddSource(false);
     } catch (err) {
-      setError('Failed to add source');
+      if (err instanceof Error) {
+        if (err.message.includes('Subscription limit reached')) {
+          setError('You have reached your subscription limit. Please upgrade your plan to add more sources.');
+        } else {
+          setError(err.message);
+        }
+      } else {
+        setError('Failed to add source');
+      }
       console.error('Error adding source:', err);
     } finally {
       setIsSubmitting(false);
@@ -343,24 +445,25 @@ export default function ProfilePage() {
 
     setPreferencesSaving(true);
     try {
-      const { data, error } = await updateUserProfile(user.id, {
+      const updates: ProfileUpdates = {
         enable_email_delivery: preferences.emailDelivery,
         brief_language: preferences.briefLanguage
-      });
+      };
 
-      if (error) {
-        setError('Failed to save preferences');
-        console.error('Error saving preferences:', error);
-      } else if (data) {
-        // Update local state with saved data
-        setPreferences({
-          emailDelivery: data.enable_email_delivery,
-          briefLanguage: data.brief_language
-        });
-        // Show success message (you could add a toast notification here)
-      }
+      const data = await saveUserProfile(updates);
+
+      // Update local state with saved data
+      setPreferences({
+        emailDelivery: data.enable_email_delivery,
+        briefLanguage: data.brief_language
+      });
+      // Show success message (you could add a toast notification here)
     } catch (err) {
-      setError('Failed to save preferences');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to save preferences');
+      }
       console.error('Error saving preferences:', err);
     } finally {
       setPreferencesSaving(false);
