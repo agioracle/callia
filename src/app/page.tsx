@@ -31,11 +31,11 @@ export default function Home() {
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
-              Your Personalized Morning Briefings Powered by AI
+              Your Personalized News Briefings Powered by AI
             </h1>
 
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Keep up with the latest news and trends with your daily morning briefings.
+              Keep up with the latest news and trends with your daily morning news briefings.
             </p>
 
             <div className="flex flex-row gap-4 justify-center items-center">
@@ -58,7 +58,7 @@ export default function Home() {
               Everything You Need for Perfect Morning Briefings
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From news crawling to audio generation, we&apos;ve got your morning briefings covered.
+              From news crawling to audio generation, we&apos;ve got your morning news briefings covered.
             </p>
           </div>
 
@@ -68,7 +68,7 @@ export default function Home() {
                 <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
                   <Globe className="h-6 w-6 text-primary" />
                 </div>
-                <CardTitle>Personalized Briefings</CardTitle>
+                <CardTitle>Personalized</CardTitle>
                 <CardDescription>
                   Get personalized morning briefings tailored to your subscriptions and preferences, cut through the news noise.
                 </CardDescription>
@@ -106,7 +106,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Email Delivery</CardTitle>
                 <CardDescription>
-                  Receive your morning briefs directly to your inbox.
+                  Receive your morning news briefings directly to your inbox.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -118,7 +118,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Source Management</CardTitle>
                 <CardDescription>
-                  Easily manage your news sources and subscriptions. All controlled by you.
+                  Easily manage your news sources and subscriptions. All controlled by yourself.
                 </CardDescription>
               </CardHeader>
             </Card>

@@ -18,9 +18,9 @@ const notoSerifSC = Noto_Serif_SC({
 });
 
 export const metadata: Metadata = {
-  title: "Morning Brief - Personalized Morning Briefings Powered by AI",
-  description: "Get personalized daily morning briefings from your favorite news sources. AI-powered news aggregation delivered to your inbox and available in text and audio formats.",
-  keywords: ["morning briefing", "morning brief", "morning brew", "personalized", "daily news", "AI-powered"],
+  title: "Morning Brief - Personalized news brief Powered by AI",
+  description: "Get personalized daily morning news briefing from your favorite news sources. AI-powered news aggregation and summarization delivered to your inbox and available in text and audio formats.",
+  keywords: ["news briefing", "news brief", "morning briefing", "morning brief", "personalized", "AI-powered"],
 };
 
 export default function RootLayout({
