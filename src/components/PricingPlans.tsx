@@ -46,6 +46,7 @@ export const plansData: Plan[] = [
     description: "For serious news consumers",
     features: [
       "Everything in Pro",
+      "Subscribe to up to 50 news sources",
       "Audio format briefings",
       "Email delivery"
     ],
