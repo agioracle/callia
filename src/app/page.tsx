@@ -27,7 +27,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <Badge variant="secondary" className="text-sm px-4 py-2">
-              Callia: Intelligent Morning Brief
+              Morning Brief: cutting through the news noise
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
@@ -171,7 +171,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  &quot;Callia has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
+                  &quot;Morning Brief has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
                 </p>
               </CardContent>
             </Card>

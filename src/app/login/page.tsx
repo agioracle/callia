@@ -87,7 +87,7 @@ export default function LoginPage() {
             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4">
               <span className="text-primary-foreground font-bold text-2xl">C</span>
             </div>
-            <CardTitle className="font-newsreader text-2xl">Welcome Back to Callia</CardTitle>
+            <CardTitle className="font-newsreader text-2xl">Welcome Back to Morning Brief</CardTitle>
             <CardDescription>
               Log in to access your personalized morning briefs.
             </CardDescription>

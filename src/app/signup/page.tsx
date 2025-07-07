@@ -92,7 +92,7 @@ export default function SignupPage() {
             </div>
             <CardTitle className="font-newsreader text-2xl">Create an Account</CardTitle>
             <CardDescription>
-              Join Callia to start receiving your personalized morning briefs.
+              Join Morning Brief to start receiving your personalized morning briefings.
             </CardDescription>
           </CardHeader>
           <CardContent>
