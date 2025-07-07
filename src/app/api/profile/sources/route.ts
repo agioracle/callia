@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAuthenticatedClient } from '@/lib/supabase-server'
+import { checkSubscriptionLimit } from '@/lib/subscription-utils'
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,8 +79,12 @@ export async function POST(request: NextRequest) {
 
       if (error) throw error
 
-      // 自动为创建者添加订阅
-      const { error: subscriptionError } = await supabase
+      // 检查是否达到订阅限制
+      const limitCheck = await checkSubscriptionLimit(supabase, user.id)
+
+      if (limitCheck.canSubscribe) {
+        // 自动为创建者添加订阅
+        const { error: subscriptionError } = await supabase
         .from('user_subscription')
         .insert({
           user_id: user.id,
@@ -87,9 +92,10 @@ export async function POST(request: NextRequest) {
           status: 'Subscribed'
         })
 
-      if (subscriptionError) {
-        console.error('Failed to create subscription for creator:', subscriptionError)
-        // 不抛出错误，因为新闻源已经创建成功
+        if (subscriptionError) {
+          console.error('Failed to create subscription for creator:', subscriptionError)
+          // 不抛出错误，因为新闻源已经创建成功
+        }
       }
 
       return NextResponse.json(data)
