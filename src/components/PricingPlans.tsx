@@ -46,7 +46,7 @@ export const plansData: Plan[] = [
     description: "For serious news consumers",
     features: [
       "Everything in Pro",
-      "Subscribe to up to 50 news sources",
+      "Extra 20 news sources (total up to 50)",
       "Audio format briefings",
       "Email delivery"
     ],
@@ -106,7 +106,7 @@ export default function PricingPlans({
                   <div key={feature} className="flex items-center space-x-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className={`text-sm ${
-                      feature.includes("Audio format briefings") || feature.includes("Email delivery")
+                      feature.includes("Extra 20 news sources") || feature.includes("Audio format briefings") || feature.includes("Email delivery")
                         ? "font-bold text-primary"
                         : ""
                     }`}>

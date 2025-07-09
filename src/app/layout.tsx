@@ -18,8 +18,8 @@ const notoSerifSC = Noto_Serif_SC({
 });
 
 export const metadata: Metadata = {
-  title: "Morning Brief - Personalized news brief Powered by AI",
-  description: "Get personalized daily morning news briefing from your favorite news sources. AI-powered news aggregation and summarization delivered to your inbox and available in text and audio formats.",
+  title: "Briefily - Personalized news briefings Powered by AI",
+  description: "Get personalized morning news briefings from your favorite news sources. AI-powered news aggregation and summarization delivered to your inbox and available in text and audio formats.",
   keywords: ["news briefing", "news brief", "morning briefing", "morning brief", "personalized", "AI-powered"],
 };
 

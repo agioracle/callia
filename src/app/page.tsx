@@ -27,7 +27,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="text-center space-y-8">
             <Badge variant="secondary" className="text-sm px-4 py-2">
-              Morning Brief: cutting through the news noise
+              News Briefing: cutting through the news noise
             </Badge>
 
             <h1 className="font-newsreader text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight">
@@ -55,7 +55,7 @@ export default function Home() {
         <div className="container mx-auto max-w-6xl px-4">
           <div className="text-center mb-16">
             <h2 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
-              Everything You Need for Perfect Morning Briefings
+              Everything You Need for Perfect News Briefings
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               From news crawling to audio generation, we&apos;ve got your morning news briefings covered.
@@ -70,7 +70,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Personalized</CardTitle>
                 <CardDescription>
-                  Get personalized morning briefings tailored to your subscriptions and preferences, cut through the news noise.
+                  Get personalized news briefings tailored to your subscriptions and preferences, cut through the news noise.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -94,7 +94,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Audio format</CardTitle>
                 <CardDescription>
-                  Listen to your morning briefings with high-quality AI-generated audio while commuting or exercising.
+                  Listen to your news briefings with high-quality AI-generated audio while commuting or exercising.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -106,7 +106,7 @@ export default function Home() {
                 </div>
                 <CardTitle>Email Delivery</CardTitle>
                 <CardDescription>
-                  Receive your morning news briefings directly to your inbox.
+                  Receive your news briefings directly to your inbox every morning.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -146,7 +146,7 @@ export default function Home() {
               Loved by News Enthusiasts
             </h2>
             <p className="text-lg text-muted-foreground">
-              See what our users say about their morning brief experiences
+              See what our users say about their news briefings experiences
             </p>
           </div>
 
@@ -171,7 +171,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  &quot;Morning Brief has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
+                  &quot;Briefily has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
                 </p>
               </CardContent>
             </Card>

@@ -250,7 +250,7 @@ export default function BriefsPage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Please sign in to begin your morning brief journey</h2>
+              <h2 className="text-2xl font-bold mb-4">Please sign in to begin your news briefings journey</h2>
               <Button onClick={() => window.location.href = '/login'}>
                 Sign In
               </Button>
@@ -268,10 +268,10 @@ export default function BriefsPage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="mb-8">
             <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-              Your Morning Briefs
+              Your News Briefings
             </h1>
             <p className="text-muted-foreground text-lg">
-              Access your personalized daily briefs
+              Access your personalized daily news briefings
             </p>
           </div>
           <div className="flex items-center justify-center min-h-[400px]">
@@ -293,10 +293,10 @@ export default function BriefsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-            Your Morning Briefs
+            Your News Briefings
           </h1>
           <p className="text-muted-foreground text-lg">
-            Access your personalized daily briefs
+            Access your personalized daily news briefings
           </p>
         </div>
 
