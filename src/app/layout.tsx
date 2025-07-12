@@ -36,6 +36,11 @@ export default function RootLayout({
           async
           defer
         ></script>
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="7fb75d12-db5e-4827-8ef0-896d28b2ae84"
+        ></script>
       </head>
       <body
         className={`${newsreader.variable} ${notoSerifSC.variable} font-mixed antialiased`}
