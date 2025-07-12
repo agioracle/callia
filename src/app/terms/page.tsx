@@ -50,23 +50,10 @@ export default function TermsPage() {
                 </ul>
               </div>
 
-              <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">3. Subscription Plans</h2>
-                <p className="text-muted-foreground mb-4">
-                  Our service offers different subscription tiers:
-                </p>
-                <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                  <li><strong>7-day Free Trial:</strong> Access to up to 5 news sources with daily text briefings</li>
-                  <li><strong>Pro Plan ($7.99/month):</strong> Up to 30 news sources with 15-day history</li>
-                  <li><strong>Max Plan ($11.99/month):</strong> Up to 50 news sources with audio briefings and email delivery</li>
-                </ul>
-                <p className="text-muted-foreground mt-4">
-                  Subscription fees are billed monthly and are non-refundable except as required by law.
-                </p>
-              </div>
+
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">4. User Conduct</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">3. User Conduct</h2>
                 <p className="text-muted-foreground mb-4">
                   You agree not to:
                 </p>
@@ -81,7 +68,7 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">5. Content and Intellectual Property</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">4. Content and Intellectual Property</h2>
                 <p className="text-muted-foreground mb-4">
                   Our service aggregates content from various news sources. We do not own the original news content but provide AI-generated summaries for your convenience. You acknowledge that:
                 </p>
@@ -94,7 +81,7 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">6. Privacy and Data Protection</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">5. Privacy and Data Protection</h2>
                 <p className="text-muted-foreground mb-4">
                   We collect and process personal information as described in our Privacy Policy. By using our service, you consent to:
                 </p>
@@ -107,7 +94,7 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">7. Disclaimer of Warranties</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">6. Disclaimer of Warranties</h2>
                 <p className="text-muted-foreground mb-4">
                   Our service is provided &quot;as is&quot; without warranties of any kind. We do not guarantee:
                 </p>
@@ -120,14 +107,14 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">8. Limitation of Liability</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">7. Limitation of Liability</h2>
                 <p className="text-muted-foreground mb-4">
                   To the maximum extent permitted by law, News Briefing and its affiliates shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising from your use of the service.
                 </p>
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">9. Termination</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">8. Termination</h2>
                 <p className="text-muted-foreground mb-4">
                   We may terminate or suspend your account at any time for violations of these Terms. You may cancel your subscription at any time through your account settings. Upon termination:
                 </p>
@@ -139,26 +126,40 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">10. Changes to Terms</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">9. Changes to Terms</h2>
                 <p className="text-muted-foreground mb-4">
                   We reserve the right to modify these Terms at any time. We will notify you of significant changes via email or through our service. Your continued use of the service after such changes constitutes acceptance of the new Terms.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">9.1 Pricing and Plan Changes</h3>
+                <p className="text-muted-foreground mb-4">
+                  As our business grows and evolves, we may need to adjust our pricing, subscription plans, or service features. We reserve the right to:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Modify subscription plan prices and billing terms</li>
+                  <li>Add, remove, or modify features within existing plans</li>
+                  <li>Introduce new subscription tiers or discontinue existing ones</li>
+                  <li>Adjust trial periods and promotional offers</li>
+                </ul>
+                <p className="text-muted-foreground mb-4">
+                  For existing subscribers, any pricing increases will be communicated at least 30 days in advance. You will have the option to cancel your subscription before the new pricing takes effect if you do not agree with the changes.
                 </p>
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">11. Governing Law</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">10. Governing Law</h2>
                 <p className="text-muted-foreground mb-4">
                   These Terms are governed by and construed in accordance with the laws of the jurisdiction where News Briefing operates. Any disputes arising under these Terms shall be resolved through binding arbitration.
                 </p>
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">12. Privacy Policy</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">11. Privacy Policy</h2>
                 <p className="text-muted-foreground mb-4">
                   We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our service.
                 </p>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.1 Information We Collect</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">11.1 Information We Collect</h3>
                 <p className="text-muted-foreground mb-4">
                   We collect the following types of information:
                 </p>
@@ -169,7 +170,7 @@ export default function TermsPage() {
                   <li><strong>Communication Data:</strong> Messages sent to our support team</li>
                 </ul>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.2 How We Use Your Information</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">11.2 How We Use Your Information</h3>
                 <p className="text-muted-foreground mb-4">
                   We use your information to:
                 </p>
@@ -182,7 +183,7 @@ export default function TermsPage() {
                   <li>Process payments and manage subscriptions</li>
                 </ul>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.3 Data Sharing and Third Parties</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">11.3 Data Sharing and Third Parties</h3>
                 <p className="text-muted-foreground mb-4">
                   We do not sell your personal information. We may share your data with:
                 </p>
@@ -193,12 +194,12 @@ export default function TermsPage() {
                   <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
                 </ul>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.4 Data Security and Retention</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">11.4 Data Security and Retention</h3>
                 <p className="text-muted-foreground mb-4">
                   We implement industry-standard security measures to protect your data. Your briefing history is stored for up to 30 days, and account information is retained while your account is active and for a reasonable period after deletion.
                 </p>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.5 Your Rights</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">11.5 Your Rights</h3>
                 <p className="text-muted-foreground mb-4">
                   You have the right to:
                 </p>
@@ -212,12 +213,12 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">13. Refund Policy</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">12. Refund Policy</h2>
                 <p className="text-muted-foreground mb-4">
                   We strive to provide excellent service, but we understand that our service may not be suitable for everyone. This Refund Policy outlines our approach to refunds and cancellations.
                 </p>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.1 Free Trial Period</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.1 Free Trial Period</h3>
                 <p className="text-muted-foreground mb-4">
                   We offer a 7-day free trial for new users. During this period, you can:
                 </p>
@@ -230,7 +231,7 @@ export default function TermsPage() {
                   No refund is necessary during the free trial period as no payment is required.
                 </p>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.2 Subscription Cancellation</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.2 Subscription Cancellation</h3>
                 <p className="text-muted-foreground mb-4">
                   You may cancel your subscription at any time through:
                 </p>
@@ -243,7 +244,7 @@ export default function TermsPage() {
                   Upon cancellation, you will continue to have access to paid features until the end of your current billing period.
                 </p>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.3 Refund Eligibility</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.3 Refund Eligibility</h3>
                 <p className="text-muted-foreground mb-4">
                   We generally do not provide refunds for subscription fees. However, we may consider refunds in the following circumstances:
                 </p>
@@ -253,7 +254,7 @@ export default function TermsPage() {
                   <li><strong>Exceptional Circumstances:</strong> At our discretion, based on individual cases</li>
                 </ul>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.4 Refund Process</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.4 Refund Process</h3>
                 <p className="text-muted-foreground mb-4">
                   To request a refund:
                 </p>
@@ -264,7 +265,7 @@ export default function TermsPage() {
                   <li>Approved refunds will be processed within 10 business days</li>
                 </ol>
 
-                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.5 Dispute Resolution</h3>
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.5 Dispute Resolution</h3>
                 <p className="text-muted-foreground mb-4">
                   If you disagree with our refund decision, you may:
                 </p>
@@ -276,7 +277,7 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">14. Contact Information</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">13. Contact Information</h2>
                 <p className="text-muted-foreground mb-4">
                   If you have any questions about these Terms of Service, please contact us at:
                 </p>
