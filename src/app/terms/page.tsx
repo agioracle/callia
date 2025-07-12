@@ -153,7 +153,130 @@ export default function TermsPage() {
               </div>
 
               <div>
-                <h2 className="font-newsreader text-2xl font-bold mb-4">12. Contact Information</h2>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">12. Privacy Policy</h2>
+                <p className="text-muted-foreground mb-4">
+                  We are committed to protecting your privacy. This Privacy Policy explains how we collect, use, and protect your personal information when you use our service.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.1 Information We Collect</h3>
+                <p className="text-muted-foreground mb-4">
+                  We collect the following types of information:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li><strong>Account Information:</strong> Email address, name, and authentication details</li>
+                  <li><strong>Usage Data:</strong> News source preferences, reading habits, and briefing history</li>
+                  <li><strong>Technical Data:</strong> IP address, device information, and browser details</li>
+                  <li><strong>Communication Data:</strong> Messages sent to our support team</li>
+                </ul>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.2 How We Use Your Information</h3>
+                <p className="text-muted-foreground mb-4">
+                  We use your information to:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Provide personalized news briefings based on your preferences</li>
+                  <li>Generate AI-powered summaries tailored to your interests</li>
+                  <li>Deliver briefings via email and in-app notifications</li>
+                  <li>Improve our service through usage analytics</li>
+                  <li>Provide customer support and respond to inquiries</li>
+                  <li>Process payments and manage subscriptions</li>
+                </ul>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.3 Data Sharing and Third Parties</h3>
+                <p className="text-muted-foreground mb-4">
+                  We do not sell your personal information. We may share your data with:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li><strong>Service Providers:</strong> Third parties who help us operate our service (e.g., hosting, analytics)</li>
+                  <li><strong>Payment Processors:</strong> Stripe for handling subscription payments</li>
+                  <li><strong>AI Services:</strong> OpenAI and similar providers for content summarization</li>
+                  <li><strong>Legal Requirements:</strong> When required by law or to protect our rights</li>
+                </ul>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.4 Data Security and Retention</h3>
+                <p className="text-muted-foreground mb-4">
+                  We implement industry-standard security measures to protect your data. Your briefing history is stored for up to 30 days, and account information is retained while your account is active and for a reasonable period after deletion.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">12.5 Your Rights</h3>
+                <p className="text-muted-foreground mb-4">
+                  You have the right to:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Access and review your personal information</li>
+                  <li>Request corrections to inaccurate data</li>
+                  <li>Delete your account and associated data</li>
+                  <li>Opt-out of certain data processing activities</li>
+                  <li>Export your data in a portable format</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">13. Refund Policy</h2>
+                <p className="text-muted-foreground mb-4">
+                  We strive to provide excellent service, but we understand that our service may not be suitable for everyone. This Refund Policy outlines our approach to refunds and cancellations.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.1 Free Trial Period</h3>
+                <p className="text-muted-foreground mb-4">
+                  We offer a 7-day free trial for new users. During this period, you can:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Access up to 5 news sources</li>
+                  <li>Receive daily text briefings</li>
+                  <li>Cancel at any time without charge</li>
+                </ul>
+                <p className="text-muted-foreground mb-4">
+                  No refund is necessary during the free trial period as no payment is required.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.2 Subscription Cancellation</h3>
+                <p className="text-muted-foreground mb-4">
+                  You may cancel your subscription at any time through:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Your account settings on our website</li>
+                  <li>Contacting our support team</li>
+                  <li>Your payment provider (e.g., Stripe customer portal)</li>
+                </ul>
+                <p className="text-muted-foreground mb-4">
+                  Upon cancellation, you will continue to have access to paid features until the end of your current billing period.
+                </p>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.3 Refund Eligibility</h3>
+                <p className="text-muted-foreground mb-4">
+                  We generally do not provide refunds for subscription fees. However, we may consider refunds in the following circumstances:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li><strong>Technical Issues:</strong> If our service experiences significant downtime or technical problems</li>
+                  <li><strong>Billing Errors:</strong> If you were charged incorrectly due to our error</li>
+                  <li><strong>Exceptional Circumstances:</strong> At our discretion, based on individual cases</li>
+                </ul>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.4 Refund Process</h3>
+                <p className="text-muted-foreground mb-4">
+                  To request a refund:
+                </p>
+                <ol className="list-decimal pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Contact our support team at support@newsbriefing.app</li>
+                  <li>Provide your account details and reason for the refund request</li>
+                  <li>Allow 5-7 business days for review and processing</li>
+                  <li>Approved refunds will be processed within 10 business days</li>
+                </ol>
+
+                <h3 className="font-newsreader text-xl font-semibold mb-3 mt-6">13.5 Dispute Resolution</h3>
+                <p className="text-muted-foreground mb-4">
+                  If you disagree with our refund decision, you may:
+                </p>
+                <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-4">
+                  <li>Appeal the decision by contacting our support team</li>
+                  <li>Dispute the charge with your payment provider</li>
+                  <li>Seek resolution through applicable consumer protection agencies</li>
+                </ul>
+              </div>
+
+              <div>
+                <h2 className="font-newsreader text-2xl font-bold mb-4">14. Contact Information</h2>
                 <p className="text-muted-foreground mb-4">
                   If you have any questions about these Terms of Service, please contact us at:
                 </p>
