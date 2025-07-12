@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAuthenticatedClient } from '@/lib/supabase-server'
+import { createAuthenticatedClient, getSupabaseServer } from '@/lib/supabase-server'
+
+const OFFICIAL_USER_ID = process.env.OFFICIAL_USER_ID
 
 export async function GET(request: NextRequest) {
   try {
@@ -22,6 +24,35 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    let briefsData = data || []
+
+    // 如果用户没有任何 brief，获取官方用户的最近一期 brief
+    if (briefsData.length === 0) {
+      console.log('No user briefs found, fetching official demo brief')
+
+      // 获取官方用户的最近一期 brief
+      // 使用管理员权限获取官方用户的数据
+      const adminSupabase = getSupabaseServer()
+      const { data: officialData, error: officialError } = await adminSupabase
+        .from('user_brief')
+        .select('user_id, brief_date, brief_content, news_source_ids, brief_audio_url, brief_audio_script')
+        .eq('user_id', OFFICIAL_USER_ID)
+        .order('brief_date', { ascending: false })
+        .limit(1)
+
+      if (officialError) {
+        console.error('Error fetching official brief:', officialError)
+        // 如果获取官方 brief 失败，仍然返回空数组
+        briefsData = []
+      } else if (officialData && officialData.length > 0) {
+        // 将官方 brief 标记为 demo brief
+        briefsData = officialData.map(brief => ({
+          ...brief,
+          isDemo: true // 添加标记表示这是 demo brief
+        }))
+      }
+    }
+
     // 转换数据格式以匹配前端期望的结构
     interface UserBrief {
       user_id: string
@@ -30,9 +61,10 @@ export async function GET(request: NextRequest) {
       news_source_ids: string | string[] | null
       brief_audio_url: string | null
       brief_audio_script: string | null
+      isDemo?: boolean
     }
 
-    const transformedData = data.map((brief: UserBrief) => {
+    const transformedData = briefsData.map((brief: UserBrief) => {
       let parsedContent
       try {
         // 尝试解析 brief_content 如果它包含结构化数据
@@ -67,6 +99,7 @@ export async function GET(request: NextRequest) {
         audioScript: brief.brief_audio_script || "",
         textContent: parsedContent.textContent || brief.brief_content,
         sources: sourcesCount,
+        isDemo: brief.isDemo || false // 传递 demo 标记
       }
     })
 

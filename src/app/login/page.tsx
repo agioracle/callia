@@ -70,7 +70,7 @@ export default function LoginPage() {
       const verifyResult = await verifyResponse.json();
 
       if (!verifyResult.success) {
-        setError("Verification failed. Please try again.");
+        setError("Verification failed. Please complete the verification again.");
         setTurnstileToken(null);
         setIsLoading(false);
         return;
@@ -177,11 +177,15 @@ export default function LoginPage() {
               </div>
               <div className="space-y-4">
                 <Turnstile
+                  key={turnstileToken ? "verified" : "pending"}
                   sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                  onSuccess={(token) => setTurnstileToken(token)}
-                  onError={() => {
+                  onSuccess={(token) => {
+                    setTurnstileToken(token);
+                    setError(null); // Clear any previous errors
+                  }}
+                  onError={(errorMessage) => {
                     setTurnstileToken(null);
-                    setError("Verification failed. Please try again.");
+                    setError(errorMessage || "Verification failed. Please try again.");
                   }}
                   onExpired={() => {
                     setTurnstileToken(null);

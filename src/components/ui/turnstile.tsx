@@ -46,21 +46,30 @@ export function Turnstile({
   useEffect(() => {
     if (!containerRef.current || disabled) return;
 
-    const loadTurnstile = () => {
-      if (!window.turnstile) return;
+        const loadTurnstile = () => {
+      if (!window.turnstile || !containerRef.current) return;
 
       if (widgetIdRef.current) {
-        window.turnstile.remove(widgetIdRef.current);
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch (error) {
+          console.warn('Failed to remove existing Turnstile widget:', error);
+        }
       }
 
-      widgetIdRef.current = window.turnstile.render(containerRef.current!, {
-        sitekey,
-        callback: onSuccess,
-        "error-callback": onError,
-        "expired-callback": onExpired,
-        theme: "auto",
-        size: "normal",
-      });
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey,
+          callback: onSuccess,
+          "error-callback": onError,
+          "expired-callback": onExpired,
+          theme: "auto",
+          size: "normal",
+        });
+      } catch (error) {
+        console.error('Failed to render Turnstile widget:', error);
+        onError?.('Failed to load verification widget');
+      }
     };
 
     if (window.turnstile) {
@@ -77,16 +86,25 @@ export function Turnstile({
     }
 
     return () => {
-      if (widgetIdRef.current) {
-        window.turnstile?.remove(widgetIdRef.current);
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+        } catch (error) {
+          console.warn('Failed to remove Turnstile widget:', error);
+        }
+        widgetIdRef.current = null;
       }
     };
   }, [sitekey, onSuccess, onError, onExpired, disabled]);
 
   // Reset widget when disabled state changes
   useEffect(() => {
-    if (disabled && widgetIdRef.current) {
-      window.turnstile?.reset(widgetIdRef.current);
+    if (disabled && widgetIdRef.current && window.turnstile) {
+      try {
+        window.turnstile.reset(widgetIdRef.current);
+      } catch (error) {
+        console.warn('Failed to reset Turnstile widget:', error);
+      }
     }
   }, [disabled]);
 

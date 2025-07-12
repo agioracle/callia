@@ -30,6 +30,7 @@ interface UserBrief {
   audioScript: string;
   textContent: string;
   sources: number;
+  isDemo?: boolean;
 }
 
 // Function to fetch user briefs from API
@@ -329,13 +330,20 @@ export default function BriefsPage() {
                           day: 'numeric'
                         })}
                       </span>
+                      {brief.isDemo && (
+                        <Badge variant="secondary" className="text-xs">
+                          Demo
+                        </Badge>
+                      )}
                     </div>
                     <Lock className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <CardTitle className="text-lg">
-                    Morning Brief - {new Date(brief.date).toLocaleDateString('en-US', { weekday: 'long' })}
+                    {brief.isDemo ? "Demo Brief" : `Morning Brief - ${new Date(brief.date).toLocaleDateString('en-US', { weekday: 'long' })}`}
                   </CardTitle>
-                  <CardDescription>Your personalized daily briefs</CardDescription>
+                  <CardDescription>
+                    {brief.isDemo ? "Sample brief to get you started" : "Your personalized daily briefs"}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">
@@ -380,7 +388,7 @@ export default function BriefsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="font-newsreader text-2xl">
-                      Morning Brief - {new Date(selectedBrief.date).toLocaleDateString('en-US', { weekday: 'long' })}
+                      {selectedBrief.isDemo ? "Demo Brief" : `Morning Brief - ${new Date(selectedBrief.date).toLocaleDateString('en-US', { weekday: 'long' })}`}
                     </CardTitle>
                     <CardDescription className="flex items-center space-x-4 mt-2">
                       <span className="flex items-center">
@@ -388,6 +396,11 @@ export default function BriefsPage() {
                         {new Date(selectedBrief.date).toLocaleDateString()}
                       </span>
                       <span>{selectedBrief.sources} sources</span>
+                      {selectedBrief.isDemo && (
+                        <Badge variant="secondary" className="text-xs">
+                          Demo
+                        </Badge>
+                      )}
                     </CardDescription>
                   </div>
 
