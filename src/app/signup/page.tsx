@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Chrome } from "lucide-react";
 import { signUp, signInWithGoogle, ensureCurrentUserProfile } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import { Turnstile } from "@/components/ui/turnstile";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -17,6 +18,7 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const router = useRouter();
   const { user, loading } = useAuth();
 
@@ -51,13 +53,44 @@ export default function SignupPage() {
     setError(null);
     setMessage(null);
 
-    const { error } = await signUp(email, password, fullName);
+    // Check if Turnstile token is available
+    if (!turnstileToken) {
+      setError("Please complete the verification challenge.");
+      setIsLoading(false);
+      return;
+    }
 
-    if (error) {
-      setError(error.message);
-    } else {
-      setMessage("Check your email for the confirmation link!");
-      // Note: User will need to confirm email before being logged in
+    try {
+      // Verify Turnstile token with our API
+      const verifyResponse = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      const verifyResult = await verifyResponse.json();
+
+      if (!verifyResult.success) {
+        setError("Verification failed. Please try again.");
+        setTurnstileToken(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Proceed with signup after successful verification
+      const { error } = await signUp(email, password, fullName);
+
+      if (error) {
+        setError(error.message);
+      } else {
+        setMessage("Check your email for the confirmation link!");
+        // Note: User will need to confirm email before being logged in
+      }
+    } catch (verifyError) {
+      console.error("Verification error:", verifyError);
+      setError("An error occurred during verification. Please try again.");
     }
 
     setIsLoading(false);
@@ -163,9 +196,24 @@ export default function SignupPage() {
                   minLength={6}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || loading}>
-                {isLoading ? "Creating Account..." : "Create Account"}
-              </Button>
+              <div className="space-y-4">
+                <Turnstile
+                  sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                  onSuccess={(token) => setTurnstileToken(token)}
+                  onError={() => {
+                    setTurnstileToken(null);
+                    setError("Verification failed. Please try again.");
+                  }}
+                  onExpired={() => {
+                    setTurnstileToken(null);
+                    setError("Verification expired. Please try again.");
+                  }}
+                  disabled={isLoading || loading}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading || loading || !turnstileToken}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
+                </Button>
+              </div>
             </form>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">

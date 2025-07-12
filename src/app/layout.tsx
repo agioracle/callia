@@ -30,6 +30,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
+          async
+          defer
+        ></script>
+      </head>
       <body
         className={`${newsreader.variable} ${notoSerifSC.variable} font-mixed antialiased`}
       >

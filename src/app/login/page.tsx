@@ -9,12 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Chrome } from "lucide-react";
 import { signIn, signInWithGoogle, ensureCurrentUserProfile } from "@/lib/auth";
 import { useAuth } from "@/contexts/AuthContext";
+import { Turnstile } from "@/components/ui/turnstile";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const router = useRouter();
   const { user, loading } = useAuth();
 
@@ -48,13 +50,44 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const { error } = await signIn(email, password);
+    // Check if Turnstile token is available
+    if (!turnstileToken) {
+      setError("Please complete the verification challenge.");
+      setIsLoading(false);
+      return;
+    }
 
-    if (error) {
-      setError(error.message);
-    } else {
-      // Redirect to home page on successful login
-      router.push("/");
+    try {
+      // Verify Turnstile token with our API
+      const verifyResponse = await fetch("/api/verify-turnstile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ token: turnstileToken }),
+      });
+
+      const verifyResult = await verifyResponse.json();
+
+      if (!verifyResult.success) {
+        setError("Verification failed. Please try again.");
+        setTurnstileToken(null);
+        setIsLoading(false);
+        return;
+      }
+
+      // Proceed with login after successful verification
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        setError(error.message);
+      } else {
+        // Redirect to home page on successful login
+        router.push("/");
+      }
+    } catch (verifyError) {
+      console.error("Verification error:", verifyError);
+      setError("An error occurred during verification. Please try again.");
     }
 
     setIsLoading(false);
@@ -142,9 +175,24 @@ export default function LoginPage() {
                   disabled={isLoading || loading}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || loading}>
-                {isLoading ? "Logging in..." : "Log In"}
-              </Button>
+              <div className="space-y-4">
+                <Turnstile
+                  sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
+                  onSuccess={(token) => setTurnstileToken(token)}
+                  onError={() => {
+                    setTurnstileToken(null);
+                    setError("Verification failed. Please try again.");
+                  }}
+                  onExpired={() => {
+                    setTurnstileToken(null);
+                    setError("Verification expired. Please try again.");
+                  }}
+                  disabled={isLoading || loading}
+                />
+                <Button type="submit" className="w-full" disabled={isLoading || loading || !turnstileToken}>
+                  {isLoading ? "Logging in..." : "Log In"}
+                </Button>
+              </div>
             </form>
             <div className="mt-6 text-center text-sm">
               <p className="text-muted-foreground">
