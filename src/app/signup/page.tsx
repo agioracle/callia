@@ -125,7 +125,7 @@ export default function SignupPage() {
             </div>
             <CardTitle className="font-newsreader text-2xl">Create an Account</CardTitle>
             <CardDescription>
-              Join Briefily to start receiving your personalized morning news briefings.
+              Join News Briefing to start receiving your personalized morning news briefings.
             </CardDescription>
           </CardHeader>
           <CardContent>

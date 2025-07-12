@@ -60,11 +60,11 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">B</span>
+              <span className="text-primary-foreground font-bold text-lg">N</span>
             </div>
             <div className="hidden sm:block">
               <span className="font-newsreader text-xl font-bold text-foreground">
-                Briefily
+                News Briefing
               </span>
               {/* <span className="text-muted-foreground text-sm ml-2">
                 News Briefing

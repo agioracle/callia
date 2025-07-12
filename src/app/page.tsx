@@ -171,7 +171,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground">
-                  &quot;Briefily has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
+                  &quot;News Briefing has transformed my morning routine. I get perfectly curated news briefings that save me hours of reading while keeping me informed.&quot;
                 </p>
               </CardContent>
             </Card>
