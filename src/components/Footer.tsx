@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Footer() {
   return (
     <footer className="border-t py-12">
@@ -9,6 +11,11 @@ export default function Footer() {
             </div>
             <span className="font-newsreader text-xl font-bold">News Briefing</span>
             {/* <span className="text-muted-foreground">Morning Brief</span> */}
+          </div>
+          <div className="mb-4">
+            <Link href="/terms" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+              Terms of Service
+            </Link>
           </div>
           <p className="text-muted-foreground text-sm">
             © 2025 News Briefing. All rights reserved by <a href="https://tokendance.ai" target="_blank" className="text-primary hover:underline">Tokendance</a>.
