@@ -71,7 +71,17 @@ const getAuthToken = async () => {
 };
 
 const fetchNewsSources = async () => {
-  const response = await fetch('/api/community/sources');
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error('No authentication token available');
+  }
+
+  const response = await fetch('/api/community/sources', {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
   if (!response.ok) {
     throw new Error('Failed to fetch news sources');
   }
@@ -248,6 +258,8 @@ export default function CommunityPage() {
   // Fetch news sources from API
   useEffect(() => {
     async function loadNewsSources() {
+      if (!user) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -259,7 +271,11 @@ export default function CommunityPage() {
         setNewlySources(data.newly || []);
       } catch (err) {
         console.error('Error fetching news sources:', err);
-        setError('Failed to load news sources');
+        if (err instanceof Error && err.message.includes('authentication')) {
+          setError('Please log in to view news sources');
+        } else {
+          setError('Failed to load news sources');
+        }
       } finally {
         setLoading(false);
       }
@@ -402,6 +418,27 @@ export default function CommunityPage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="text-center">Loading news sources...</div>
         </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-7xl px-4 py-8">
+          <div className="text-center">
+            <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
+              Discover News Sources
+            </h1>
+            <p className="text-muted-foreground text-lg mb-8">
+              Please log in to view and subscribe to news sources.
+            </p>
+            <Button onClick={() => window.location.href = '/login'}>
+              Log In
+            </Button>
+          </div>
+        </div>
+        <Footer />
       </div>
     );
   }
