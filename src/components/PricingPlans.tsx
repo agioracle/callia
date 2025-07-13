@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export interface Plan {
   name: string;
@@ -69,6 +70,14 @@ export default function PricingPlans({
   subtitle = "Start free and upgrade as your news consumption grows",
   className = "",
 }: PricingPlansProps) {
+  const router = useRouter();
+
+  const handleCTAClick = (cta: string) => {
+    if (cta === "Get Started") {
+      router.push("/briefs");
+    }
+  };
+
   return (
     <div className={className}>
       {showTitle && (
@@ -118,6 +127,7 @@ export default function PricingPlans({
               <Button
                 className="w-full"
                 variant={plan.variant}
+                onClick={() => handleCTAClick(plan.cta)}
               >
                 {plan.cta}
               </Button>
