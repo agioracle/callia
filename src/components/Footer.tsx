@@ -16,7 +16,7 @@ export default function Footer() {
             </Link>
           </div>
           <p className="text-muted-foreground text-sm">
-            © 2025 News Briefing. All rights reserved by <a href="https://tokendance.ai" target="_blank" className="text-primary hover:underline">Tokendance</a>.
+            © 2025 News Briefing. All rights reserved by <a href="https://tokendance.ai" target="_blank" className="text-primary hover:underline">TokenDance</a>.
           </p>
         </div>
       </div>
