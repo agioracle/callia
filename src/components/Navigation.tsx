@@ -59,9 +59,7 @@ export default function Navigation() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">N</span>
-            </div>
+            <img src="/logo.png" alt="News Briefing Logo" className="h-8 w-8 rounded-lg" />
             <div className="hidden sm:block">
               <span className="font-newsreader text-xl font-bold text-foreground">
                 News Briefing
