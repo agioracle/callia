@@ -585,7 +585,7 @@ export default function ProfilePage() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Badge variant="outline">{source.articlesCount} articles</Badge>
+                          <Badge variant="outline">Recently Added {source.articlesCount} Articles</Badge>
                           {source.isPublic && (
                             <Eye className="h-4 w-4 text-green-600" />
                           )}
@@ -772,7 +772,7 @@ export default function ProfilePage() {
                     <CardContent>
                       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-                          <span>{source.latest_crawled_num} articles</span>
+                          {/* <span>{source.latest_crawled_num} articles</span> */}
                           <span>
                             Updated {new Date(source.latest_crawled_at).toLocaleDateString()}
                           </span>
