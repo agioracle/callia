@@ -120,14 +120,11 @@ export const getCurrentUser = async () => {
 // Utility functions for RSS and site info extraction
 export const detectRSSFeed = async (url: string) => {
   try {
-    const response = await fetch(url, { method: 'HEAD' })
-    const contentType = response.headers.get('content-type') || ''
+    // const response = await fetch(url, { method: 'HEAD' })
+    // const contentType = response.headers.get('content-type') || ''
 
     // Check if the content type indicates RSS/XML
-    return contentType.includes('xml') ||
-           contentType.includes('rss') ||
-           url.includes('rss') ||
-           url.includes('feed')
+    return url.includes('rss') || url.includes('feed') || url.includes('.xml')
   } catch (error) {
     console.error('Error detecting RSS feed:', error)
     return false
