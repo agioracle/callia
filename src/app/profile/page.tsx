@@ -22,9 +22,10 @@ import {
   Link as LinkIcon,
   Plus,
   Settings,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -255,11 +256,42 @@ export default function ProfilePage() {
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const { user } = useAuth();
 
-  // Fetch user subscriptions, managed sources, and profile preferences on component mount
+  // Performance optimization states
+  const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  // Use useRef to track cache time to avoid triggering re-renders
+  const lastFetchTimeRef = useRef<number>(0);
+
+  // Page visibility detection for performance optimization
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Optimized fetch user data with caching
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.id) {
         setLoading(false);
+        return;
+      }
+
+      const now = Date.now();
+      const hasData = subscriptions.length > 0 || managedSources.length > 0;
+      const shouldSkipFetch = hasData &&
+                             now - lastFetchTimeRef.current < CACHE_DURATION;
+
+      // Skip fetching if we have cached data and it's still fresh
+      if (shouldSkipFetch) {
+        console.log('Using cached profile data');
+        setDataLoaded(true);
         return;
       }
 
@@ -283,6 +315,12 @@ export default function ProfilePage() {
             briefLanguage: profileData.brief_language
           });
         }
+
+        lastFetchTimeRef.current = now;
+        setLastUpdateTime(now); // Update display time
+        setDataLoaded(true);
+
+        console.log('Fetched fresh profile data');
       } catch (err) {
         setError('Failed to fetch data');
         console.error('Error fetching data:', err);
@@ -291,8 +329,49 @@ export default function ProfilePage() {
       }
     };
 
-    fetchData();
-  }, [user?.id]);
+    // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
+    if (user?.id && (isPageVisible || !dataLoaded)) {
+      fetchData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch subscriptions, managed sources, and user profile in parallel
+      const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
+        fetchUserSubscriptions(),
+        fetchManagedSources(),
+        fetchUserProfile()
+      ]);
+
+      setSubscriptions(subscriptionsData || []);
+      setManagedSources(managedSourcesData || []);
+
+      if (profileData) {
+        setPreferences({
+          emailDelivery: profileData.enable_email_delivery,
+          briefLanguage: profileData.brief_language
+        });
+      }
+
+      lastFetchTimeRef.current = Date.now();
+      setLastUpdateTime(Date.now()); // Update display time
+
+      console.log('Manual refresh completed');
+    } catch (err) {
+      console.error('Error during manual refresh:', err);
+      setError('Failed to refresh data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleUrlChange = async (url: string) => {
     setNewSourceForm(prev => ({ ...prev, url }));
@@ -510,12 +589,34 @@ export default function ProfilePage() {
       <div className="container mx-auto max-w-4xl px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-            Profile & Settings
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Manage your account, news sources, and preferences
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
+                Profile & Settings
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Manage your account, news sources, and preferences
+              </p>
+              {/* Cache status indicator */}
+              {/* {user && lastUpdateTime > 0 && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
+                  {Date.now() - lastUpdateTime < CACHE_DURATION && (
+                    <span className="ml-2 text-green-600">(Using cached data)</span>
+                  )}
+                </div>
+              )} */}
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={loading || !user}
+              className="flex items-center"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

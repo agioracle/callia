@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, RefreshCw } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Footer from "@/components/Footer";
 import PricingPlans, { plansData } from "@/components/PricingPlans";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 interface UserProfile {
   user_id: string;
@@ -24,11 +24,42 @@ export default function BillingPage() {
   const [profileLoading, setProfileLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-    // Fetch user profile when user is available
+  // Performance optimization states
+  const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  // Use useRef to track cache time to avoid triggering re-renders
+  const lastFetchTimeRef = useRef<number>(0);
+
+    // Page visibility detection for performance optimization
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+    // Optimized fetch user profile with caching
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (!user) {
         setProfileLoading(false);
+        return;
+      }
+
+      const now = Date.now();
+      const hasData = userProfile !== null;
+      const shouldSkipFetch = hasData &&
+                             now - lastFetchTimeRef.current < CACHE_DURATION;
+
+      // Skip fetching if we have cached data and it's still fresh
+      if (shouldSkipFetch) {
+        console.log('Using cached user profile data');
+        setDataLoaded(true);
         return;
       }
 
@@ -52,8 +83,14 @@ export default function BillingPage() {
 
       try {
         setProfileLoading(true);
+        setError(null);
         const data = await fetchUserProfileFromAPI();
         setUserProfile(data);
+        lastFetchTimeRef.current = now;
+        setLastUpdateTime(now); // Update display time
+        setDataLoaded(true);
+
+        console.log('Fetched fresh user profile data');
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -66,8 +103,56 @@ export default function BillingPage() {
       }
     };
 
-    fetchUserProfile();
-  }, [user]);
+    // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
+    if (user && (isPageVisible || !dataLoaded)) {
+      fetchUserProfile();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    if (!user) return;
+
+    try {
+      setProfileLoading(true);
+      setError(null);
+
+      // API helper functions for manual refresh
+      const getAuthToken = async () => {
+        const { supabase } = await import('@/lib/supabase');
+        const { data: { session } } = await supabase.auth.getSession();
+        return session?.access_token;
+      };
+
+      const fetchUserProfileFromAPI = async () => {
+        const token = await getAuthToken();
+        if (!token) throw new Error('No authentication token available');
+
+        const response = await fetch('/api/profile/user', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!response.ok) throw new Error('Failed to fetch user profile');
+        return response.json();
+      };
+
+      const data = await fetchUserProfileFromAPI();
+      setUserProfile(data);
+      lastFetchTimeRef.current = Date.now();
+      setLastUpdateTime(Date.now()); // Update display time
+
+      console.log('Manual refresh completed');
+    } catch (err) {
+      console.error('Error during manual refresh:', err);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to refresh user profile');
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
 
   // Map database pricing_plan to actual plan names
   const getPlanName = (pricingPlan: string) => {
@@ -90,12 +175,34 @@ export default function BillingPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-            Billing & Subscription
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Manage your subscription plan and payment details.
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
+                Billing & Subscription
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Manage your subscription plan and payment details.
+              </p>
+              {/* Cache status indicator */}
+              {/* {user && lastUpdateTime > 0 && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
+                  {Date.now() - lastUpdateTime < CACHE_DURATION && (
+                    <span className="ml-2 text-green-600">(Using cached data)</span>
+                  )}
+                </div>
+              )} */}
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={isLoading || !user}
+              className="flex items-center"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-8">

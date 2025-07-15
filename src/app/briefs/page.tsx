@@ -18,6 +18,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
+  RefreshCw,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -69,6 +70,15 @@ export default function BriefsPage() {
   const [isScriptExpanded, setIsScriptExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // Performance optimization states
+  const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  // Use useRef to track cache time to avoid triggering re-renders
+  const lastFetchTimeRef = useRef<number>(0);
+
   // Helper function to format time in MM:SS format
   const formatTime = (timeInSeconds: number): string => {
     if (isNaN(timeInSeconds) || timeInSeconds < 0) return '0:00';
@@ -114,11 +124,33 @@ export default function BriefsPage() {
     }
   };
 
-  // Fetch briefs when user is available
+  // Page visibility detection for performance optimization
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Optimized fetch briefs with caching
   useEffect(() => {
     const loadBriefs = async () => {
       if (!user) {
         setLoading(false);
+        return;
+      }
+
+      const now = Date.now();
+      const hasData = briefs.length > 0;
+      const shouldSkipFetch = hasData &&
+                             now - lastFetchTimeRef.current < CACHE_DURATION;
+
+      // Skip fetching if we have cached data and it's still fresh
+      if (shouldSkipFetch) {
+        console.log('Using cached briefs data');
+        setDataLoaded(true);
         return;
       }
 
@@ -139,6 +171,11 @@ export default function BriefsPage() {
         if (userBriefs.length > 0) {
           setSelectedBrief(userBriefs[0]);
         }
+        lastFetchTimeRef.current = now;
+        setLastUpdateTime(now); // Update display time
+        setDataLoaded(true);
+
+        console.log('Fetched fresh briefs data');
       } catch (err) {
         setError('Failed to load briefs');
         console.error('Error loading briefs:', err);
@@ -147,12 +184,45 @@ export default function BriefsPage() {
       }
     };
 
-    if (!authLoading) {
+    // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
+    if (user && !authLoading && (isPageVisible || !dataLoaded)) {
       loadBriefs();
     }
-  }, [user, authLoading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    if (!user) return;
 
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get the current session to extract the access token
+      const { supabase } = await import('@/lib/supabase');
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.access_token) {
+        throw new Error('No access token available');
+      }
+
+      const userBriefs = await fetchUserBriefs(session.access_token);
+      setBriefs(userBriefs);
+      if (userBriefs.length > 0) {
+        setSelectedBrief(userBriefs[0]);
+      }
+      lastFetchTimeRef.current = Date.now();
+      setLastUpdateTime(Date.now()); // Update display time
+
+      console.log('Manual refresh completed');
+    } catch (err) {
+      console.error('Error during manual refresh:', err);
+      setError('Failed to refresh briefs');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePlayPause = (brief: UserBrief) => {
     if (audioRef.current && playingBriefId === brief.id) {
@@ -268,19 +338,50 @@ export default function BriefsPage() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="mb-8">
-            <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-              Your News Briefings
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Access your personalized daily news briefings
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
+                  Your News Briefings
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Access your personalized daily news briefings
+                </p>
+                {/* Cache status indicator */}
+                {/* {user && lastUpdateTime > 0 && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
+                    {Date.now() - lastUpdateTime < CACHE_DURATION && (
+                      <span className="ml-2 text-green-600">(Using cached data)</span>
+                    )}
+                  </div>
+                )} */}
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleManualRefresh}
+                disabled={loading || !user}
+                className="flex items-center"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <h2 className="text-xl font-semibold mb-4">No briefs found</h2>
-              <p className="text-muted-foreground">
+              <p className="text-muted-foreground mb-4">
                 Try to subscribe to some news sources and your daily briefs will appear here once they&apos;re generated.
               </p>
+              <Button
+                variant="outline"
+                onClick={handleManualRefresh}
+                disabled={loading}
+                className="flex items-center"
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                Check Again
+              </Button>
             </div>
           </div>
         </div>
@@ -293,12 +394,34 @@ export default function BriefsPage() {
       <div className="container mx-auto max-w-7xl px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
-            Your News Briefings
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Access your personalized daily news briefings
-          </p>
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-2">
+                Your News Briefings
+              </h1>
+              <p className="text-muted-foreground text-lg">
+                Access your personalized daily news briefings
+              </p>
+              {/* Cache status indicator */}
+              {user && lastUpdateTime > 0 && (
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
+                  {Date.now() - lastUpdateTime < CACHE_DURATION && (
+                    <span className="ml-2 text-green-600">(Using cached data)</span>
+                  )}
+                </div>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              onClick={handleManualRefresh}
+              disabled={loading || !user}
+              className="flex items-center"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
