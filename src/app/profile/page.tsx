@@ -256,10 +256,9 @@ export default function ProfilePage() {
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const { user } = useAuth();
 
-  // Performance optimization states
+    // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
   // Use useRef to track cache time to avoid triggering re-renders
@@ -317,7 +316,6 @@ export default function ProfilePage() {
         }
 
         lastFetchTimeRef.current = now;
-        setLastUpdateTime(now); // Update display time
         setDataLoaded(true);
 
         console.log('Fetched fresh profile data');
@@ -362,7 +360,6 @@ export default function ProfilePage() {
       }
 
       lastFetchTimeRef.current = Date.now();
-      setLastUpdateTime(Date.now()); // Update display time
 
       console.log('Manual refresh completed');
     } catch (err) {

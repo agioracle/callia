@@ -186,7 +186,6 @@ export default function CommunityPage() {
     // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
   // Use useRef to track cache time to avoid triggering re-renders
@@ -302,7 +301,6 @@ export default function CommunityPage() {
         setCommunitySources(data.community || []);
         setNewlySources(data.newly || []);
         lastFetchTimeRef.current = now;
-        setLastUpdateTime(now); // Update display time
         setDataLoaded(true);
 
         console.log('Fetched fresh news sources data');
@@ -385,7 +383,6 @@ export default function CommunityPage() {
       setCommunitySources(data.community || []);
       setNewlySources(data.newly || []);
       lastFetchTimeRef.current = Date.now();
-      setLastUpdateTime(Date.now()); // Update display time
 
       console.log('Manual refresh completed');
     } catch (err) {
@@ -535,14 +532,14 @@ export default function CommunityPage() {
             Follow official and community-recommended news sources to build your perfect briefings.
           </p>
           {/* Cache status indicator */}
-          {user && lastUpdateTime > 0 && (
+          {/* {user && lastUpdateTime > 0 && (
             <div className="mt-2 text-sm text-muted-foreground">
               Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
               {Date.now() - lastUpdateTime < CACHE_DURATION && (
                 <span className="ml-2 text-green-600">(Using cached data)</span>
               )}
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Search and Filter */}

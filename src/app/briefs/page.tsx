@@ -70,10 +70,9 @@ export default function BriefsPage() {
   const [isScriptExpanded, setIsScriptExpanded] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Performance optimization states
+    // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
   // Use useRef to track cache time to avoid triggering re-renders
@@ -172,7 +171,6 @@ export default function BriefsPage() {
           setSelectedBrief(userBriefs[0]);
         }
         lastFetchTimeRef.current = now;
-        setLastUpdateTime(now); // Update display time
         setDataLoaded(true);
 
         console.log('Fetched fresh briefs data');
@@ -213,7 +211,6 @@ export default function BriefsPage() {
         setSelectedBrief(userBriefs[0]);
       }
       lastFetchTimeRef.current = Date.now();
-      setLastUpdateTime(Date.now()); // Update display time
 
       console.log('Manual refresh completed');
     } catch (err) {
@@ -403,14 +400,14 @@ export default function BriefsPage() {
                 Access your personalized daily news briefings
               </p>
               {/* Cache status indicator */}
-              {user && lastUpdateTime > 0 && (
+              {/* {user && lastUpdateTime > 0 && (
                 <div className="mt-2 text-sm text-muted-foreground">
                   Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
                   {Date.now() - lastUpdateTime < CACHE_DURATION && (
                     <span className="ml-2 text-green-600">(Using cached data)</span>
                   )}
                 </div>
-              )}
+              )} */}
             </div>
             <Button
               variant="outline"
