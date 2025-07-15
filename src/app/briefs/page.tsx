@@ -17,8 +17,7 @@ import {
   Download,
   Loader2,
   ChevronDown,
-  ChevronUp,
-  RefreshCw,
+  ChevronUp
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -353,7 +352,7 @@ export default function BriefsPage() {
                   </div>
                 )} */}
               </div>
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={handleManualRefresh}
                 disabled={loading || !user}
@@ -361,7 +360,7 @@ export default function BriefsPage() {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
-              </Button>
+              </Button> */}
             </div>
           </div>
           <div className="flex items-center justify-center min-h-[400px]">
@@ -370,7 +369,7 @@ export default function BriefsPage() {
               <p className="text-muted-foreground mb-4">
                 Try to subscribe to some news sources and your daily briefs will appear here once they&apos;re generated.
               </p>
-              <Button
+              {/* <Button
                 variant="outline"
                 onClick={handleManualRefresh}
                 disabled={loading}
@@ -378,7 +377,7 @@ export default function BriefsPage() {
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                 Check Again
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>

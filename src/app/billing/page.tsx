@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, RefreshCw } from "lucide-react";
+import { Check } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import Footer from "@/components/Footer";
 import PricingPlans, { plansData } from "@/components/PricingPlans";

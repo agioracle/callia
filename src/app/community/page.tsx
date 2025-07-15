@@ -20,8 +20,7 @@ import {
   Globe,
   PlusCircle,
   Plus,
-  Loader2,
-  RefreshCw
+  Loader2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";

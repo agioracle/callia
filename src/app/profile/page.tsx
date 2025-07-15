@@ -22,8 +22,7 @@ import {
   Link as LinkIcon,
   Plus,
   Settings,
-  Loader2,
-  RefreshCw
+  Loader2
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
