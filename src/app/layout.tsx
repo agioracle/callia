@@ -36,11 +36,11 @@ export default function RootLayout({
           src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
           strategy="beforeInteractive"
         />
-        <script
+        {/* <script
           defer
           src="https://cloud.umami.is/script.js"
           data-website-id="7fb75d12-db5e-4827-8ef0-896d28b2ae84"
-        ></script>
+        ></script> */}
       </head>
       <body
         className={`${newsreader.variable} ${notoSerifSC.variable} font-mixed antialiased`}
