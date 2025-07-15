@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { ensureCurrentUserProfile } from '@/lib/auth';
 
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         // Type guard to ensure we have the correct result
         if (result && typeof result === 'object' && 'data' in result) {
-          const { data: { session } } = result as { data: { session: any } };
+          const { data: { session } } = result as { data: { session: Session | null } };
           setUser(session?.user ?? null);
 
           // Ensure user profile exists if user is logged in

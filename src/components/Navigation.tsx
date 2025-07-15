@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export default function Navigation() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <img src="/logo.png" alt="News Briefing Logo" className="h-8 w-8 rounded-lg" />
+            <Image src="/logo.png" alt="News Briefing Logo" width={32} height={32} className="rounded-lg" />
             <div className="hidden sm:block">
               <span className="font-newsreader text-xl font-bold text-foreground">
                 News Briefing

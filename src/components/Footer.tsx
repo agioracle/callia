@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -6,7 +7,7 @@ export default function Footer() {
       <div className="container mx-auto max-w-6xl px-4">
         <div className="text-center">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <img src="/logo.png" alt="News Briefing Logo" className="h-8 w-8 rounded-lg" />
+            <Image src="/logo.png" alt="News Briefing Logo" width={32} height={32} className="rounded-lg" />
             <span className="font-newsreader text-xl font-bold">News Briefing</span>
             {/* <span className="text-muted-foreground">Morning Brief</span> */}
           </div>
