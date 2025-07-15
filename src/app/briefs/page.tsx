@@ -409,7 +409,7 @@ export default function BriefsPage() {
                 </div>
               )} */}
             </div>
-            <Button
+            {/* <Button
               variant="outline"
               onClick={handleManualRefresh}
               disabled={loading || !user}
@@ -417,7 +417,7 @@ export default function BriefsPage() {
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
-            </Button>
+            </Button> */}
           </div>
         </div>
 

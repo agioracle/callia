@@ -557,7 +557,7 @@ export default function CommunityPage() {
             <Filter className="h-4 w-4 mr-2" />
             Filter
           </Button>
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handleManualRefresh}
             disabled={loading || !user}
@@ -565,7 +565,7 @@ export default function CommunityPage() {
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
-          </Button>
+          </Button> */}
 
           {/* Add Source Dialog */}
           <Dialog open={showAddSource} onOpenChange={setShowAddSource}>

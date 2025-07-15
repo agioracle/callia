@@ -190,7 +190,7 @@ export default function BillingPage() {
                 </div>
               )} */}
             </div>
-            <Button
+            {/* <Button
               variant="outline"
               onClick={handleManualRefresh}
               disabled={isLoading || !user}
@@ -198,7 +198,7 @@ export default function BillingPage() {
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
-            </Button>
+            </Button> */}
           </div>
         </div>
 
