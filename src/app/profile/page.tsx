@@ -234,7 +234,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("profile");
   const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
   const [managedSources, setManagedSources] = useState<NewsSource[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Change initial state to false
   const [error, setError] = useState<string | null>(null);
   const [showAddSource, setShowAddSource] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -253,7 +253,8 @@ export default function ProfilePage() {
     briefLanguage: userData.language
   });
   const [preferencesSaving, setPreferencesSaving] = useState(false);
-  const { user } = useAuth();
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
+  const { user, loading: authLoading } = useAuth();
 
     // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
@@ -273,11 +274,30 @@ export default function ProfilePage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Optimized fetch user data with caching
+  // Show loading indicator only after a delay to avoid flashing
+  useEffect(() => {
+    if (loading || authLoading) {
+      const timer = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 800); // Show loading indicator only if loading takes more than 800ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [loading, authLoading]);
+
+  // Optimized fetch user data with caching and better error handling
   useEffect(() => {
     const fetchData = async () => {
+      // Wait for auth to complete first
+      if (authLoading) {
+        return;
+      }
+
       if (!user?.id) {
         setLoading(false);
+        setDataLoaded(true);
         return;
       }
 
@@ -290,6 +310,7 @@ export default function ProfilePage() {
       if (shouldSkipFetch) {
         console.log('Using cached profile data');
         setDataLoaded(true);
+        setLoading(false);
         return;
       }
 
@@ -327,11 +348,11 @@ export default function ProfilePage() {
     };
 
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
-    if (user?.id && (isPageVisible || !dataLoaded)) {
+    if (!authLoading && (isPageVisible || !dataLoaded)) {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user?.id, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
@@ -559,22 +580,52 @@ export default function ProfilePage() {
     description: sub.news_source.description
   }));
 
-  if (loading) {
+  // Show loading state only if timeout has been reached
+  if (showLoadingTimeout) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <p>Loading profile...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user (and auth is not loading)
+  if (!user && !authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Please sign in to view your profile</h2>
+              <Button onClick={() => window.location.href = '/login'}>
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-500 mb-4">Error: {error}</p>
-          <Button onClick={() => window.location.reload()}>
-            Retry
-          </Button>
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-500 mb-4">Error: {error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Retry
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     );

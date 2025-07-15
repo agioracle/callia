@@ -159,14 +159,15 @@ const languages = [
 ];
 
 export default function CommunityPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("official");
   const [searchQuery, setSearchQuery] = useState("");
   const [officialSources, setOfficialSources] = useState<NewsSource[]>([]);
   const [communitySources, setCommunitySources] = useState<NewsSource[]>([]);
   const [newlySources, setNewlySources] = useState<NewsSource[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Change initial state to false
   const [error, setError] = useState<string | null>(null);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
 
   // Add source dialog state
   const [showAddSource, setShowAddSource] = useState(false);
@@ -273,10 +274,32 @@ export default function CommunityPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Optimized fetch news sources from API with caching
+  // Show loading indicator only after a delay to avoid flashing
+  useEffect(() => {
+    if (loading || authLoading) {
+      const timer = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 800); // Show loading indicator only if loading takes more than 800ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [loading, authLoading]);
+
+  // Optimized fetch news sources from API with caching and better error handling
   useEffect(() => {
     async function loadNewsSources() {
-      if (!user) return;
+      // Wait for auth to complete first
+      if (authLoading) {
+        return;
+      }
+
+      if (!user) {
+        setLoading(false);
+        setDataLoaded(true);
+        return;
+      }
 
       const now = Date.now();
       const hasData = officialSources.length > 0 || communitySources.length > 0 || newlySources.length > 0;
@@ -287,6 +310,7 @@ export default function CommunityPage() {
       if (shouldSkipFetch) {
         console.log('Using cached news sources data');
         setDataLoaded(true);
+        setLoading(false);
         return;
       }
 
@@ -316,11 +340,11 @@ export default function CommunityPage() {
     }
 
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
-    if (user && (isPageVisible || !dataLoaded)) {
+    if (!authLoading && (isPageVisible || !dataLoaded)) {
       loadNewsSources();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   const handleSubscribe = async (sourceId: string) => {
     if (!user) {
@@ -478,17 +502,24 @@ export default function CommunityPage() {
     </Card>
   );
 
-  if (loading) {
+  // Show loading state only if timeout has been reached
+  if (showLoadingTimeout) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-7xl px-4 py-8">
-          <div className="text-center">Loading news sources...</div>
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p>Loading news sources...</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!user) {
+  // Show login prompt if no user (and auth is not loading)
+  if (!user && !authLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-7xl px-4 py-8">

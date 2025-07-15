@@ -21,8 +21,9 @@ interface UserProfile {
 export default function BillingPage() {
   const { user, loading: authLoading } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false); // Change initial state to false
   const [error, setError] = useState<string | null>(null);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
 
     // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
@@ -42,11 +43,30 @@ export default function BillingPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-    // Optimized fetch user profile with caching
+  // Show loading indicator only after a delay to avoid flashing
+  useEffect(() => {
+    if (profileLoading || authLoading) {
+      const timer = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 800); // Show loading indicator only if loading takes more than 800ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [profileLoading, authLoading]);
+
+    // Optimized fetch user profile with caching and better error handling
   useEffect(() => {
     const fetchUserProfile = async () => {
+      // Wait for auth to complete first
+      if (authLoading) {
+        return;
+      }
+
       if (!user) {
         setProfileLoading(false);
+        setDataLoaded(true);
         return;
       }
 
@@ -59,6 +79,7 @@ export default function BillingPage() {
       if (shouldSkipFetch) {
         console.log('Using cached user profile data');
         setDataLoaded(true);
+        setProfileLoading(false);
         return;
       }
 
@@ -102,11 +123,11 @@ export default function BillingPage() {
     };
 
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
-    if (user && (isPageVisible || !dataLoaded)) {
+    if (!authLoading && (isPageVisible || !dataLoaded)) {
       fetchUserProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
@@ -166,7 +187,41 @@ export default function BillingPage() {
     ? plansData.find(p => p.name === getPlanName(userProfile.pricing_plan))
     : plansData.find(p => p.name === "7-day Free Trial"); // fallback
 
-  const isLoading = authLoading || profileLoading;
+  const isLoading = showLoadingTimeout;
+
+  // Show loading state only if timeout has been reached
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <p>Loading billing information...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if no user (and auth is not loading)
+  if (!user && !authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold mb-4">Please sign in to view billing information</h2>
+              <Button onClick={() => window.location.href = '/login'}>
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -210,7 +265,7 @@ export default function BillingPage() {
                   <CardTitle>Current Plan</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {isLoading ? (
+                  {profileLoading ? (
                     <div className="space-y-3">
                       <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
                       <div className="h-4 bg-gray-200 rounded animate-pulse"></div>

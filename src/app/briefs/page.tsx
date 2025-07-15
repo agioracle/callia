@@ -60,7 +60,7 @@ export default function BriefsPage() {
   const { user, loading: authLoading } = useAuth();
   const [briefs, setBriefs] = useState<UserBrief[]>([]);
   const [selectedBrief, setSelectedBrief] = useState<UserBrief | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Change initial state to false
   const [error, setError] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [playingBriefId, setPlayingBriefId] = useState<string | null>(null);
@@ -72,6 +72,7 @@ export default function BriefsPage() {
     // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
   const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
 
   // Use useRef to track cache time to avoid triggering re-renders
@@ -132,11 +133,30 @@ export default function BriefsPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, []);
 
-  // Optimized fetch briefs with caching
+  // Show loading indicator only after a delay to avoid flashing
+  useEffect(() => {
+    if (loading || authLoading) {
+      const timer = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 800); // Show loading indicator only if loading takes more than 800ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [loading, authLoading]);
+
+  // Optimized fetch briefs with caching and better error handling
   useEffect(() => {
     const loadBriefs = async () => {
+      // Wait for auth to complete first
+      if (authLoading) {
+        return;
+      }
+
       if (!user) {
         setLoading(false);
+        setDataLoaded(true);
         return;
       }
 
@@ -149,6 +169,7 @@ export default function BriefsPage() {
       if (shouldSkipFetch) {
         console.log('Using cached briefs data');
         setDataLoaded(true);
+        setLoading(false);
         return;
       }
 
@@ -182,7 +203,7 @@ export default function BriefsPage() {
     };
 
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
-    if (user && !authLoading && (isPageVisible || !dataLoaded)) {
+    if (!authLoading && (isPageVisible || !dataLoaded)) {
       loadBriefs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -277,7 +298,7 @@ export default function BriefsPage() {
   };
 
   // Show loading state
-  if (authLoading || loading) {
+  if (showLoadingTimeout) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto max-w-7xl px-4 py-8">

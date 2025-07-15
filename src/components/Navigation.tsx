@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -20,6 +20,7 @@ export default function Navigation() {
   const pathname = usePathname();
   const { user, loading, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -28,6 +29,19 @@ export default function Navigation() {
     { name: "Discover Sources", href: "/community" },
     { name: "Pricing", href: "/billing" },
   ];
+
+  // Show loading indicator only after a short delay to avoid flashing
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => {
+        setShowLoadingTimeout(true);
+      }, 500); // Show loading indicator only if loading takes more than 500ms
+
+      return () => clearTimeout(timer);
+    } else {
+      setShowLoadingTimeout(false);
+    }
+  }, [loading]);
 
   // Get user display name and email
   const getUserDisplayName = () => {
@@ -89,7 +103,7 @@ export default function Navigation() {
 
           {/* Right side - User menu or Login/Signup */}
           <div className="flex items-center space-x-4">
-            {loading ? (
+            {loading && showLoadingTimeout ? (
               <div className="w-8 h-8 rounded-full bg-muted animate-pulse" />
             ) : user ? (
               <>
@@ -134,7 +148,7 @@ export default function Navigation() {
                   </DropdownMenuContent>
                 </DropdownMenu>
               </>
-            ) : (
+            ) : !loading ? (
               <div className="hidden md:flex items-center space-x-2">
                  <Button variant="ghost" asChild>
                    <Link href="/login">Log in</Link>
@@ -143,7 +157,7 @@ export default function Navigation() {
                    <Link href="/signup">Sign Up</Link>
                  </Button>
               </div>
-            )}
+            ) : null}
 
             {/* Mobile menu button */}
             <Button
@@ -180,7 +194,7 @@ export default function Navigation() {
                 </Link>
               ))}
 
-              {!user && (
+              {!user && !loading && (
                 <div className="pt-4 space-y-2">
                   <Button variant="ghost" asChild className="w-full justify-start">
                     <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
