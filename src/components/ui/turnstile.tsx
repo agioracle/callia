@@ -85,18 +85,17 @@ export function Turnstile({
       }
     };
 
-    if (window.turnstile) {
-      window.turnstile.ready(loadTurnstile);
-    } else {
-      const checkTurnstile = () => {
-        if (window.turnstile) {
-          window.turnstile.ready(loadTurnstile);
-        } else {
-          setTimeout(checkTurnstile, 100);
-        }
-      };
-      checkTurnstile();
-    }
+    const checkTurnstile = () => {
+      if (window.turnstile && typeof window.turnstile.render === 'function') {
+        // Turnstile is fully loaded, render directly without using .ready()
+        loadTurnstile();
+      } else {
+        // Keep checking until turnstile is available
+        setTimeout(checkTurnstile, 100);
+      }
+    };
+
+    checkTurnstile();
 
     return () => {
       if (widgetIdRef.current && window.turnstile) {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Newsreader, Noto_Serif_SC } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Navigation from "@/components/Navigation";
@@ -31,11 +32,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script
+        <Script
           src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-          async
-          defer
-        ></script>
+          strategy="beforeInteractive"
+        />
         <script
           defer
           src="https://cloud.umami.is/script.js"
