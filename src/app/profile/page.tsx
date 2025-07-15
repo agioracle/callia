@@ -334,40 +334,40 @@ export default function ProfilePage() {
   }, [user?.id, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
-  const handleManualRefresh = async () => {
-    if (!user?.id) return;
+  // const handleManualRefresh = async () => {
+  //   if (!user?.id) return;
 
-    try {
-      setLoading(true);
-      setError(null);
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
 
-      // Fetch subscriptions, managed sources, and user profile in parallel
-      const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
-        fetchUserSubscriptions(),
-        fetchManagedSources(),
-        fetchUserProfile()
-      ]);
+  //     // Fetch subscriptions, managed sources, and user profile in parallel
+  //     const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
+  //       fetchUserSubscriptions(),
+  //       fetchManagedSources(),
+  //       fetchUserProfile()
+  //     ]);
 
-      setSubscriptions(subscriptionsData || []);
-      setManagedSources(managedSourcesData || []);
+  //     setSubscriptions(subscriptionsData || []);
+  //     setManagedSources(managedSourcesData || []);
 
-      if (profileData) {
-        setPreferences({
-          emailDelivery: profileData.enable_email_delivery,
-          briefLanguage: profileData.brief_language
-        });
-      }
+  //     if (profileData) {
+  //       setPreferences({
+  //         emailDelivery: profileData.enable_email_delivery,
+  //         briefLanguage: profileData.brief_language
+  //       });
+  //     }
 
-      lastFetchTimeRef.current = Date.now();
+  //     lastFetchTimeRef.current = Date.now();
 
-      console.log('Manual refresh completed');
-    } catch (err) {
-      console.error('Error during manual refresh:', err);
-      setError('Failed to refresh data');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed');
+  //   } catch (err) {
+  //     console.error('Error during manual refresh:', err);
+  //     setError('Failed to refresh data');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleUrlChange = async (url: string) => {
     setNewSourceForm(prev => ({ ...prev, url }));

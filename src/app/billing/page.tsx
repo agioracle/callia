@@ -109,47 +109,47 @@ export default function BillingPage() {
   }, [user, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
-  const handleManualRefresh = async () => {
-    if (!user) return;
+  // const handleManualRefresh = async () => {
+  //   if (!user) return;
 
-    try {
-      setProfileLoading(true);
-      setError(null);
+  //   try {
+  //     setProfileLoading(true);
+  //     setError(null);
 
-      // API helper functions for manual refresh
-      const getAuthToken = async () => {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token;
-      };
+  //     // API helper functions for manual refresh
+  //     const getAuthToken = async () => {
+  //       const { supabase } = await import('@/lib/supabase');
+  //       const { data: { session } } = await supabase.auth.getSession();
+  //       return session?.access_token;
+  //     };
 
-      const fetchUserProfileFromAPI = async () => {
-        const token = await getAuthToken();
-        if (!token) throw new Error('No authentication token available');
+  //     const fetchUserProfileFromAPI = async () => {
+  //       const token = await getAuthToken();
+  //       if (!token) throw new Error('No authentication token available');
 
-        const response = await fetch('/api/profile/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Failed to fetch user profile');
-        return response.json();
-      };
+  //       const response = await fetch('/api/profile/user', {
+  //         headers: { 'Authorization': `Bearer ${token}` }
+  //       });
+  //       if (!response.ok) throw new Error('Failed to fetch user profile');
+  //       return response.json();
+  //     };
 
-      const data = await fetchUserProfileFromAPI();
-      setUserProfile(data);
-      lastFetchTimeRef.current = Date.now();
+  //     const data = await fetchUserProfileFromAPI();
+  //     setUserProfile(data);
+  //     lastFetchTimeRef.current = Date.now();
 
-      console.log('Manual refresh completed');
-    } catch (err) {
-      console.error('Error during manual refresh:', err);
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('Failed to refresh user profile');
-      }
-    } finally {
-      setProfileLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed');
+  //   } catch (err) {
+  //     console.error('Error during manual refresh:', err);
+  //     if (err instanceof Error) {
+  //       setError(err.message);
+  //     } else {
+  //       setError('Failed to refresh user profile');
+  //     }
+  //   } finally {
+  //     setProfileLoading(false);
+  //   }
+  // };
 
   // Map database pricing_plan to actual plan names
   const getPlanName = (pricingPlan: string) => {

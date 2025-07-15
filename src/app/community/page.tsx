@@ -369,32 +369,32 @@ export default function CommunityPage() {
   };
 
   // Manual refresh function
-  const handleManualRefresh = async () => {
-    if (!user) return;
+  // const handleManualRefresh = async () => {
+  //   if (!user) return;
 
-    try {
-      setLoading(true);
-      setError(null);
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
 
-      const data = await fetchNewsSources();
+  //     const data = await fetchNewsSources();
 
-      setOfficialSources(data.official || []);
-      setCommunitySources(data.community || []);
-      setNewlySources(data.newly || []);
-      lastFetchTimeRef.current = Date.now();
+  //     setOfficialSources(data.official || []);
+  //     setCommunitySources(data.community || []);
+  //     setNewlySources(data.newly || []);
+  //     lastFetchTimeRef.current = Date.now();
 
-      console.log('Manual refresh completed');
-    } catch (err) {
-      console.error('Error during manual refresh:', err);
-      if (err instanceof Error && err.message.includes('authentication')) {
-        setError('Please log in to view news sources');
-      } else {
-        setError('Failed to refresh news sources');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed');
+  //   } catch (err) {
+  //     console.error('Error during manual refresh:', err);
+  //     if (err instanceof Error && err.message.includes('authentication')) {
+  //       setError('Please log in to view news sources');
+  //     } else {
+  //       setError('Failed to refresh news sources');
+  //     }
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const formatLastUpdate = (dateString: string | null) => {
     if (!dateString) return 'Never';

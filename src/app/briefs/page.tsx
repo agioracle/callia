@@ -189,36 +189,36 @@ export default function BriefsPage() {
   }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
-  const handleManualRefresh = async () => {
-    if (!user) return;
+  // const handleManualRefresh = async () => {
+  //   if (!user) return;
 
-    try {
-      setLoading(true);
-      setError(null);
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
 
-      // Get the current session to extract the access token
-      const { supabase } = await import('@/lib/supabase');
-      const { data: { session } } = await supabase.auth.getSession();
+  //     // Get the current session to extract the access token
+  //     const { supabase } = await import('@/lib/supabase');
+  //     const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        throw new Error('No access token available');
-      }
+  //     if (!session?.access_token) {
+  //       throw new Error('No access token available');
+  //     }
 
-      const userBriefs = await fetchUserBriefs(session.access_token);
-      setBriefs(userBriefs);
-      if (userBriefs.length > 0) {
-        setSelectedBrief(userBriefs[0]);
-      }
-      lastFetchTimeRef.current = Date.now();
+  //     const userBriefs = await fetchUserBriefs(session.access_token);
+  //     setBriefs(userBriefs);
+  //     if (userBriefs.length > 0) {
+  //       setSelectedBrief(userBriefs[0]);
+  //     }
+  //     lastFetchTimeRef.current = Date.now();
 
-      console.log('Manual refresh completed');
-    } catch (err) {
-      console.error('Error during manual refresh:', err);
-      setError('Failed to refresh briefs');
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     console.log('Manual refresh completed');
+  //   } catch (err) {
+  //     console.error('Error during manual refresh:', err);
+  //     setError('Failed to refresh briefs');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handlePlayPause = (brief: UserBrief) => {
     if (audioRef.current && playingBriefId === brief.id) {
