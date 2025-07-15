@@ -20,7 +20,8 @@ import {
   Globe,
   PlusCircle,
   Plus,
-  Loader2
+  Loader2,
+  RefreshCw
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -182,6 +183,11 @@ export default function CommunityPage() {
     isPublic: true
   });
 
+  // Performance optimization states
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
   // Handle URL change with auto-extraction
   const handleUrlChange = async (url: string) => {
     setNewSourceForm(prev => ({ ...prev, url }));
@@ -255,10 +261,32 @@ export default function CommunityPage() {
     }
   };
 
-  // Fetch news sources from API
+  // Page visibility detection for performance optimization
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsPageVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Optimized fetch news sources from API with caching
   useEffect(() => {
     async function loadNewsSources() {
       if (!user) return;
+
+      const now = Date.now();
+      const shouldSkipFetch = now - lastFetchTime < CACHE_DURATION &&
+                             officialSources.length > 0 &&
+                             communitySources.length > 0 &&
+                             newlySources.length > 0;
+
+      // Skip fetching if we have cached data and it's still fresh
+      if (shouldSkipFetch) {
+        console.log('Using cached news sources data');
+        return;
+      }
 
       try {
         setLoading(true);
@@ -269,6 +297,9 @@ export default function CommunityPage() {
         setOfficialSources(data.official || []);
         setCommunitySources(data.community || []);
         setNewlySources(data.newly || []);
+        setLastFetchTime(now);
+
+        console.log('Fetched fresh news sources data');
       } catch (err) {
         console.error('Error fetching news sources:', err);
         if (err instanceof Error && err.message.includes('authentication')) {
@@ -281,8 +312,11 @@ export default function CommunityPage() {
       }
     }
 
-    loadNewsSources();
-  }, [user]);
+    // Only load if page is visible or if we have no data yet
+    if (isPageVisible || (!officialSources.length && !communitySources.length && !newlySources.length)) {
+      loadNewsSources();
+    }
+  }, [user, isPageVisible, lastFetchTime, CACHE_DURATION, officialSources.length, communitySources.length, newlySources.length]);
 
   const handleSubscribe = async (sourceId: string) => {
     if (!user) {
@@ -327,6 +361,34 @@ export default function CommunityPage() {
     } catch (err) {
       console.error('Error updating subscription:', err);
       alert('Failed to update subscription. Please try again.');
+    }
+  };
+
+  // Manual refresh function
+  const handleManualRefresh = async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data = await fetchNewsSources();
+
+      setOfficialSources(data.official || []);
+      setCommunitySources(data.community || []);
+      setNewlySources(data.newly || []);
+      setLastFetchTime(Date.now());
+
+      console.log('Manual refresh completed');
+    } catch (err) {
+      console.error('Error during manual refresh:', err);
+      if (err instanceof Error && err.message.includes('authentication')) {
+        setError('Please log in to view news sources');
+      } else {
+        setError('Failed to refresh news sources');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -464,6 +526,15 @@ export default function CommunityPage() {
           <p className="text-muted-foreground text-lg">
             Follow official and community-recommended news sources to build your perfect briefings.
           </p>
+          {/* Cache status indicator */}
+          {user && lastFetchTime > 0 && (
+            <div className="mt-2 text-sm text-muted-foreground">
+              Data last updated: {new Date(lastFetchTime).toLocaleTimeString()}
+              {Date.now() - lastFetchTime < CACHE_DURATION && (
+                <span className="ml-2 text-green-600">(Using cached data)</span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Search and Filter */}
@@ -480,6 +551,15 @@ export default function CommunityPage() {
           <Button variant="outline" className="flex items-center">
             <Filter className="h-4 w-4 mr-2" />
             Filter
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleManualRefresh}
+            disabled={loading || !user}
+            className="flex items-center"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
           </Button>
 
           {/* Add Source Dialog */}

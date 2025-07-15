@@ -15,6 +15,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [debouncedUser, setDebouncedUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -58,12 +59,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Debounce user state changes to prevent excessive re-renders
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedUser(user);
+    }, 300); // 300ms debounce delay
+
+    return () => clearTimeout(timer);
+  }, [user]);
+
   const signOut = async () => {
     await supabase.auth.signOut();
   };
 
   const value = {
-    user,
+    user: debouncedUser,
     loading,
     signOut,
   };
