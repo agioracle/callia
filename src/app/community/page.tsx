@@ -23,7 +23,7 @@ import {
   Loader2,
   RefreshCw
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   detectRSSFeed,
@@ -183,10 +183,14 @@ export default function CommunityPage() {
     isPublic: true
   });
 
-  // Performance optimization states
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+    // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
+  const [dataLoaded, setDataLoaded] = useState<boolean>(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<number>(0); // For display purposes only
   const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes cache
+
+  // Use useRef to track cache time to avoid triggering re-renders
+  const lastFetchTimeRef = useRef<number>(0);
 
   // Handle URL change with auto-extraction
   const handleUrlChange = async (url: string) => {
@@ -277,14 +281,14 @@ export default function CommunityPage() {
       if (!user) return;
 
       const now = Date.now();
-      const shouldSkipFetch = now - lastFetchTime < CACHE_DURATION &&
-                             officialSources.length > 0 &&
-                             communitySources.length > 0 &&
-                             newlySources.length > 0;
+      const hasData = officialSources.length > 0 || communitySources.length > 0 || newlySources.length > 0;
+      const shouldSkipFetch = hasData &&
+                             now - lastFetchTimeRef.current < CACHE_DURATION;
 
       // Skip fetching if we have cached data and it's still fresh
       if (shouldSkipFetch) {
         console.log('Using cached news sources data');
+        setDataLoaded(true);
         return;
       }
 
@@ -297,7 +301,9 @@ export default function CommunityPage() {
         setOfficialSources(data.official || []);
         setCommunitySources(data.community || []);
         setNewlySources(data.newly || []);
-        setLastFetchTime(now);
+        lastFetchTimeRef.current = now;
+        setLastUpdateTime(now); // Update display time
+        setDataLoaded(true);
 
         console.log('Fetched fresh news sources data');
       } catch (err) {
@@ -312,11 +318,12 @@ export default function CommunityPage() {
       }
     }
 
-    // Only load if page is visible or if we have no data yet
-    if (isPageVisible || (!officialSources.length && !communitySources.length && !newlySources.length)) {
+    // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
+    if (user && (isPageVisible || !dataLoaded)) {
       loadNewsSources();
     }
-  }, [user, isPageVisible, lastFetchTime, CACHE_DURATION, officialSources.length, communitySources.length, newlySources.length]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
 
   const handleSubscribe = async (sourceId: string) => {
     if (!user) {
@@ -377,7 +384,8 @@ export default function CommunityPage() {
       setOfficialSources(data.official || []);
       setCommunitySources(data.community || []);
       setNewlySources(data.newly || []);
-      setLastFetchTime(Date.now());
+      lastFetchTimeRef.current = Date.now();
+      setLastUpdateTime(Date.now()); // Update display time
 
       console.log('Manual refresh completed');
     } catch (err) {
@@ -527,10 +535,10 @@ export default function CommunityPage() {
             Follow official and community-recommended news sources to build your perfect briefings.
           </p>
           {/* Cache status indicator */}
-          {user && lastFetchTime > 0 && (
+          {user && lastUpdateTime > 0 && (
             <div className="mt-2 text-sm text-muted-foreground">
-              Data last updated: {new Date(lastFetchTime).toLocaleTimeString()}
-              {Date.now() - lastFetchTime < CACHE_DURATION && (
+              Data last updated: {new Date(lastUpdateTime).toLocaleTimeString()}
+              {Date.now() - lastUpdateTime < CACHE_DURATION && (
                 <span className="ml-2 text-green-600">(Using cached data)</span>
               )}
             </div>
