@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,22 @@ export default function LoginPage() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const router = useRouter();
   const { user, loading } = useAuth();
+
+  // Stable callback functions for Turnstile
+  const handleTurnstileSuccess = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setError(null); // Clear any previous errors
+  }, []);
+
+  const handleTurnstileError = useCallback((errorMessage: string) => {
+    setTurnstileToken(null);
+    setError(errorMessage || "Verification failed. Please try again.");
+  }, []);
+
+  const handleTurnstileExpired = useCallback(() => {
+    setTurnstileToken(null);
+    setError("Verification expired. Please try again.");
+  }, []);
 
   // Handle OAuth callback and ensure user profile
   useEffect(() => {
@@ -177,20 +193,10 @@ export default function LoginPage() {
               </div>
               <div className="space-y-4">
                 <Turnstile
-                  key={turnstileToken ? "verified" : "pending"}
                   sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || ""}
-                  onSuccess={(token) => {
-                    setTurnstileToken(token);
-                    setError(null); // Clear any previous errors
-                  }}
-                  onError={(errorMessage) => {
-                    setTurnstileToken(null);
-                    setError(errorMessage || "Verification failed. Please try again.");
-                  }}
-                  onExpired={() => {
-                    setTurnstileToken(null);
-                    setError("Verification expired. Please try again.");
-                  }}
+                  onSuccess={handleTurnstileSuccess}
+                  onError={handleTurnstileError}
+                  onExpired={handleTurnstileExpired}
                   disabled={isLoading || loading}
                 />
                 <Button type="submit" className="w-full" disabled={isLoading || loading || !turnstileToken}>

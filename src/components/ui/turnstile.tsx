@@ -42,38 +42,51 @@ export function Turnstile({
 }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const isInitializedRef = useRef(false);
+
+  // We use refs to store the latest callback functions to avoid re-rendering
+  // the Turnstile widget when callbacks change
+
+  // Handle callback updates without re-initializing the widget
+  const callbacksRef = useRef({
+    onSuccess,
+    onError: onError || (() => {}),
+    onExpired: onExpired || (() => {}),
+  });
+
+  // Update callback refs when props change
+  useEffect(() => {
+    callbacksRef.current = {
+      onSuccess,
+      onError: onError || (() => {}),
+      onExpired: onExpired || (() => {}),
+    };
+  }, [onSuccess, onError, onExpired]);
 
   useEffect(() => {
-    if (!containerRef.current || disabled) return;
+    if (!containerRef.current || disabled || isInitializedRef.current) return;
 
-        const loadTurnstile = () => {
+    const loadTurnstile = () => {
       if (!window.turnstile || !containerRef.current) return;
-
-      if (widgetIdRef.current) {
-        try {
-          window.turnstile.remove(widgetIdRef.current);
-        } catch (error) {
-          console.warn('Failed to remove existing Turnstile widget:', error);
-        }
-      }
 
       try {
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
           sitekey,
-          callback: onSuccess,
-          "error-callback": onError,
-          "expired-callback": onExpired,
+          callback: (token: string) => callbacksRef.current.onSuccess(token),
+          "error-callback": (error: string) => callbacksRef.current.onError(error),
+          "expired-callback": () => callbacksRef.current.onExpired(),
           theme: "auto",
           size: "normal",
         });
+        isInitializedRef.current = true;
       } catch (error) {
         console.error('Failed to render Turnstile widget:', error);
-        onError?.('Failed to load verification widget');
+        callbacksRef.current.onError('Failed to load verification widget');
       }
     };
 
     if (window.turnstile) {
-      loadTurnstile();
+      window.turnstile.ready(loadTurnstile);
     } else {
       const checkTurnstile = () => {
         if (window.turnstile) {
@@ -93,9 +106,10 @@ export function Turnstile({
           console.warn('Failed to remove Turnstile widget:', error);
         }
         widgetIdRef.current = null;
+        isInitializedRef.current = false;
       }
     };
-  }, [sitekey, onSuccess, onError, onExpired, disabled]);
+  }, [sitekey, disabled]); // Only depend on sitekey and disabled
 
   // Reset widget when disabled state changes
   useEffect(() => {
