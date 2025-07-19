@@ -36,11 +36,10 @@ export default function RootLayout({
           src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
           strategy="beforeInteractive"
         />
-        {/* <script
-          defer
-          src="https://cloud.umami.is/script.js"
-          data-website-id="7fb75d12-db5e-4827-8ef0-896d28b2ae84"
-        ></script> */}
+        <Script
+          src="https://cdn.paddle.com/paddle/v2/paddle.js"
+          strategy="beforeInteractive"
+        />
       </head>
       <body
         className={`${newsreader.variable} ${notoSerifSC.variable} font-mixed antialiased`}
@@ -49,6 +48,19 @@ export default function RootLayout({
           <Navigation />
           {children}
         </AuthProvider>
+        <Script id="paddle-init" strategy="afterInteractive">
+          {`
+            window.Paddle.Environment.set("sandbox");
+            window.Paddle.Initialize({
+              token: "test_1a443e2cb5ebc778aeeb41870c2"
+            });
+          `}
+        </Script>
+        {/* <Script
+          src="https://cloud.umami.is/script.js"
+          data-website-id="7fb75d12-db5e-4827-8ef0-896d28b2ae84"
+          strategy="afterInteractive"
+        /> */}
       </body>
     </html>
   );

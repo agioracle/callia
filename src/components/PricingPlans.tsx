@@ -3,12 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export interface Plan {
   name: string;
   monthlyPrice: number;
   annualPrice: number;
+  quantity: number;
+  productId: string;
+  monthlyPriceId: string;
+  annualPriceId: string;
   description: string;
   features: string[];
   cta: string;
@@ -21,6 +25,10 @@ export const plansData: Plan[] = [
     name: "7-day Free Trial",
     monthlyPrice: 0,
     annualPrice: 0,
+    quantity: 1,
+    productId: "",
+    monthlyPriceId: "",
+    annualPriceId: "",
     description: "Perfect for getting started",
     features: [
       "Subscribe to up to 5 news sources",
@@ -33,8 +41,12 @@ export const plansData: Plan[] = [
   },
   {
     name: "Pro",
-    monthlyPrice: 8,
-    annualPrice: 80,
+    monthlyPrice: 0,
+    annualPrice: 0,
+    quantity: 1,
+    productId: "pro_01k0gb6n288kvzw0xegt72j2jw",
+    monthlyPriceId: "pri_01k0gbjv037hw7ffykj79qb1g6",
+    annualPriceId: "pri_01k0gbr6rfsavbyz4kq655hevp",
     description: "For serious news consumers",
     features: [
       "Subscribe to up to 30 news sources",
@@ -47,8 +59,12 @@ export const plansData: Plan[] = [
   },
   {
     name: "Max",
-    monthlyPrice: 12,
-    annualPrice: 120,
+    monthlyPrice: 0,
+    annualPrice: 0,
+    quantity: 1,
+    productId: "pro_01k0gcfa1wwg29qhvbvxpsb5ne",
+    monthlyPriceId: "pri_01k0gcx1353r0hda9jd888nae4",
+    annualPriceId: "pri_01k0gd22t9sxt8gc707szae0c1",
     description: "For power users and professionals",
     features: [
       "Everything in Pro",
@@ -70,6 +86,37 @@ interface PricingPlansProps {
   showBillingToggle?: boolean;
 }
 
+// Declare Paddle type for TypeScript
+declare global {
+  interface Window {
+    Paddle: {
+      PricePreview: (options: { items: { priceId: string; quantity: number }[] }) => Promise<PaddlePrice>;
+      Status: {
+        libraryVersion: string;
+      };
+    };
+  }
+}
+
+interface PaddlePrice {
+  data: {
+    details?: {
+      lineItems?: Array<{
+        formattedTotals?: {
+          total?: string;
+        };
+      }>;
+      totals?: {
+        total?: string;
+      };
+    };
+    price?: {
+      formatted: string;
+      value: string;
+    };
+  };
+}
+
 export default function PricingPlans({
   showTitle = true,
   title = "Choose Your Plan",
@@ -79,6 +126,124 @@ export default function PricingPlans({
 }: PricingPlansProps) {
   const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(true);
+  const [paddlePrices, setPaddlePrices] = useState<Record<string, {
+    monthlyPrice: number;
+    annualPrice: number;
+    monthlyFormatted: string;
+    annualFormatted: string;
+  }>>({});
+  const [pricesLoading, setPricesLoading] = useState(true);
+
+  useEffect(() => {
+                const waitForPaddle = () => {
+      return new Promise<void>((resolve) => {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+
+        const checkPaddle = () => {
+          attempts++;
+
+          if (typeof window !== 'undefined' &&
+              window.Paddle &&
+              window.Paddle.Status) {
+            resolve();
+          } else if (attempts >= maxAttempts) {
+            console.error('Paddle failed to initialize after 5 seconds');
+            resolve(); // Resolve anyway to avoid hanging
+          } else {
+            setTimeout(checkPaddle, 100);
+          }
+        };
+        checkPaddle();
+      });
+    };
+
+    const fetchPaddlePrices = async () => {
+      try {
+        // Wait for Paddle to be fully initialized
+        await waitForPaddle();
+
+                const plansWithPriceIds = plansData.filter(plan => plan.monthlyPriceId && plan.annualPriceId);
+
+        const pricePromises = plansWithPriceIds
+          .map(async (plan) => {
+            try {
+               const [monthlyResult, annualResult] = await Promise.all([
+                 window.Paddle.PricePreview({
+                   items: [{ priceId: plan.monthlyPriceId, quantity: 1 }]
+                 }),
+                 window.Paddle.PricePreview({
+                   items: [{ priceId: plan.annualPriceId, quantity: 1 }]
+                 })
+               ]);
+
+                                             // Extract price from response using correct property names
+               const getFormattedPrice = (result: PaddlePrice) => {
+                 // Try the correct camelCase property name
+                 if (result?.data?.details?.lineItems?.[0]?.formattedTotals?.total) {
+                   return result.data.details.lineItems[0].formattedTotals.total;
+                 }
+
+                 // Fallback to other possible formats
+                 if (result?.data?.details?.totals?.total) {
+                   return result.data.details.totals.total;
+                 }
+
+                 return null;
+               };
+
+               const monthlyPrice = getFormattedPrice(monthlyResult as PaddlePrice);
+               const annualPrice = getFormattedPrice(annualResult as PaddlePrice);
+
+               if (!monthlyPrice || !annualPrice) {
+                 console.warn(`Could not extract prices for ${plan.name}`);
+                 return null;
+               }
+
+               // Extract numeric values for calculations
+               const extractPrice = (priceString: string): number => {
+                 const match = priceString.match(/[\d,]+\.?\d*/);
+                 return match ? parseFloat(match[0].replace(/,/g, '')) : 0;
+               };
+
+               return {
+                 planName: plan.name,
+                 monthlyPrice: extractPrice(monthlyPrice),
+                 annualPrice: extractPrice(annualPrice),
+                 monthlyFormatted: monthlyPrice,
+                 annualFormatted: annualPrice
+               };
+             } catch (error) {
+               console.error(`Failed to fetch price for ${plan.name}:`, error);
+               return null;
+             }
+          });
+
+        const results = await Promise.all(pricePromises);
+        const pricesMap = results
+          .filter(result => result !== null)
+          .reduce((acc, result) => {
+            if (result) {
+              acc[result.planName] = {
+                monthlyPrice: result.monthlyPrice,
+                annualPrice: result.annualPrice,
+                monthlyFormatted: result.monthlyFormatted,
+                annualFormatted: result.annualFormatted
+              };
+            }
+            return acc;
+          }, {} as Record<string, { monthlyPrice: number; annualPrice: number; monthlyFormatted: string; annualFormatted: string }>);
+
+        setPaddlePrices(pricesMap);
+      } catch (error) {
+        console.error('Failed to fetch Paddle prices:', error);
+      } finally {
+        setPricesLoading(false);
+      }
+    };
+
+    fetchPaddlePrices();
+  }, []);
 
   const handleCTAClick = (cta: string) => {
     if (cta === "Get Started") {
@@ -87,31 +252,67 @@ export default function PricingPlans({
   };
 
   const formatPrice = (plan: Plan) => {
-    if (plan.monthlyPrice === 0) return "$0";
+    // Check if this is the free trial plan (no price IDs)
+    if (!plan.monthlyPriceId && !plan.annualPriceId) {
+      return "$0";
+    }
 
-    const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
-    const period = isAnnual ? "/year" : "/month";
+    // Show loading state while fetching Paddle prices
+    if (pricesLoading && plan.monthlyPriceId && plan.annualPriceId) {
+      return <span className="text-3xl font-bold">Loading...</span>;
+    }
 
-    if (isAnnual && plan.monthlyPrice > 0) {
+    // Use Paddle prices if available, otherwise fallback to hardcoded prices
+    const paddlePrice = paddlePrices[plan.name];
+    let displayPrice: string;
+    let period: string;
+
+    if (paddlePrice) {
+      displayPrice = isAnnual ? paddlePrice.annualFormatted : paddlePrice.monthlyFormatted;
+      period = ""; // Paddle formatted prices already include currency and may include period
+    } else {
+      const price = isAnnual ? plan.annualPrice : plan.monthlyPrice;
+      period = isAnnual ? "/year" : "/month";
+      displayPrice = `$${price}${period}`;
+    }
+
+    if (isAnnual && plan.monthlyPriceId && paddlePrice) {
       return (
         <div className="flex flex-col items-center">
-          <span className="text-3xl font-bold">${price}{period}</span>
+          <span className="text-3xl font-bold">{displayPrice}</span>
           <span className="text-sm text-muted-foreground line-through">
-            ${(plan.monthlyPrice * 12).toFixed(2)}/year
+             ${(paddlePrice.monthlyPrice * 12).toFixed(2)}/year
           </span>
         </div>
       );
     }
 
-    return <span className="text-3xl font-bold">${price}{period}</span>;
+    return <span className="text-3xl font-bold">{displayPrice}</span>;
   };
 
   const calculateSavings = (plan: Plan) => {
-    if (plan.monthlyPrice === 0) return 0;
+    // Only calculate savings for paid plans with price IDs
+    if (!plan.monthlyPriceId || !plan.annualPriceId) return 0;
+
+        // Use real Paddle prices if available
+    const paddlePrice = paddlePrices[plan.name];
+    if (paddlePrice) {
+      const monthlyPrice = paddlePrice.monthlyPrice;
+      const annualPrice = paddlePrice.annualPrice;
+
+      if (monthlyPrice > 0 && annualPrice > 0) {
+        const monthlyTotal = monthlyPrice * 12;
+        const savings = monthlyTotal - annualPrice;
+        const percentage = Math.round((savings / monthlyTotal) * 100);
+        return percentage > 0 ? percentage : 0;
+      }
+    }
+
+    // Fallback to hardcoded prices if Paddle prices not available
     const monthlyTotal = plan.monthlyPrice * 12;
     const savings = monthlyTotal - plan.annualPrice;
     const percentage = Math.round((savings / monthlyTotal) * 100);
-    return percentage;
+    return percentage > 0 ? percentage : 0;
   };
 
   return (
@@ -172,7 +373,7 @@ export default function PricingPlans({
               {plan.isPopular && (
                 <Badge className="w-fit mx-auto mb-2">Most Popular</Badge>
               )}
-              {isAnnual && plan.monthlyPrice > 0 && calculateSavings(plan) > 0 && (
+              {isAnnual && plan.monthlyPriceId && calculateSavings(plan) > 0 && (
                 <Badge variant="secondary" className="w-fit mx-auto mb-2">
                   Save {calculateSavings(plan)}%
                 </Badge>
