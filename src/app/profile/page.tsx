@@ -760,7 +760,6 @@ export default function ProfilePage() {
                     <div className="p-4 border rounded-lg space-y-4">
                       <div className="space-y-1">
                         <p className="text-xl font-bold">{currentPlan.name}</p>
-                        <p className="text-muted-foreground">{currentPlan.price}/month</p>
                       </div>
                       <ul className="space-y-2 text-sm text-muted-foreground">
                         {currentPlan.features.map(feature => (
