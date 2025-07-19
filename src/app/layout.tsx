@@ -50,7 +50,7 @@ export default function RootLayout({
         </AuthProvider>
         <Script id="paddle-init" strategy="afterInteractive">
           {`
-            window.Paddle.Environment.set("sandbox");
+            window.Paddle.Environment.set("${process.env.PADDLE_ENVIRONMENT}");
             window.Paddle.Initialize({
               token: "test_1a443e2cb5ebc778aeeb41870c2"
             });

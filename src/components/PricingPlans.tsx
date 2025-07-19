@@ -245,9 +245,17 @@ export default function PricingPlans({
     fetchPaddlePrices();
   }, []);
 
-  const handleCTAClick = (cta: string) => {
-    if (cta === "Get Started") {
+  const handleCTAClick = (plan: Plan, isAnnual: boolean) => {
+    if (plan.cta === "Get Started") {
       router.push("/briefs");
+    }
+    if (plan.cta === "Choose Plan") {
+      window.Paddle.Checkout.open({
+        items: [{
+          priceId: isAnnual ? plan.annualPriceId : plan.monthlyPriceId,
+          quantity: plan.quantity,
+        }],
+      });
     }
   };
 
@@ -402,7 +410,7 @@ export default function PricingPlans({
               <Button
                 className="w-full"
                 variant={plan.variant}
-                onClick={() => handleCTAClick(plan.cta)}
+                onClick={() => handleCTAClick(plan, isAnnual)}
               >
                 {plan.cta}
               </Button>
