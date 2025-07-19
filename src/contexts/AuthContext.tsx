@@ -191,7 +191,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [getValidSession, isSessionValid]);
+  }, [isSessionValid]); // 移除 getValidSession 依赖，避免循环
 
   const signOut = async () => {
     // 清除缓存

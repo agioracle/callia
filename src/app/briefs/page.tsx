@@ -19,7 +19,7 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Types for brief data
@@ -146,67 +146,68 @@ export default function BriefsPage() {
     }
   }, [loading, authLoading]);
 
+  // 使用useCallback优化loadBriefs函数
+  const loadBriefs = useCallback(async () => {
+    // Wait for auth to complete first
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      setLoading(false);
+      setDataLoaded(true);
+      return;
+    }
+
+    const now = Date.now();
+    const hasData = briefs.length > 0;
+    const shouldSkipFetch = hasData &&
+                           now - lastFetchTimeRef.current < CACHE_DURATION;
+
+    // Skip fetching if we have cached data and it's still fresh
+    if (shouldSkipFetch) {
+      console.log('Using cached briefs data');
+      setDataLoaded(true);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // 使用AuthContext的缓存session而不是重新获取
+      const validSession = await getValidSession();
+
+      if (!validSession?.access_token) {
+        throw new Error('No access token available');
+      }
+
+      const userBriefs = await fetchUserBriefs(validSession.access_token);
+      setBriefs(userBriefs);
+      if (userBriefs.length > 0) {
+        setSelectedBrief(userBriefs[0]);
+      }
+      lastFetchTimeRef.current = now;
+      setDataLoaded(true);
+
+      console.log('Fetched fresh briefs data');
+    } catch (err) {
+      setError('Failed to load briefs');
+      console.error('Error loading briefs:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, user, briefs.length]); // 移除 getValidSession 依赖，避免无限循环
+
   // Optimized fetch briefs with caching and better error handling
   useEffect(() => {
-    const loadBriefs = async () => {
-      // Wait for auth to complete first
-      if (authLoading) {
-        return;
-      }
-
-      if (!user) {
-        setLoading(false);
-        setDataLoaded(true);
-        return;
-      }
-
-      const now = Date.now();
-      const hasData = briefs.length > 0;
-      const shouldSkipFetch = hasData &&
-                             now - lastFetchTimeRef.current < CACHE_DURATION;
-
-      // Skip fetching if we have cached data and it's still fresh
-      if (shouldSkipFetch) {
-        console.log('Using cached briefs data');
-        setDataLoaded(true);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // 使用AuthContext的缓存session而不是重新获取
-        const validSession = await getValidSession();
-
-        if (!validSession?.access_token) {
-          throw new Error('No access token available');
-        }
-
-        const userBriefs = await fetchUserBriefs(validSession.access_token);
-        setBriefs(userBriefs);
-        if (userBriefs.length > 0) {
-          setSelectedBrief(userBriefs[0]);
-        }
-        lastFetchTimeRef.current = now;
-        setDataLoaded(true);
-
-        console.log('Fetched fresh briefs data');
-      } catch (err) {
-        setError('Failed to load briefs');
-        console.error('Error loading briefs:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
     if (!authLoading && (isPageVisible || !dataLoaded)) {
       loadBriefs();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isPageVisible, getValidSession]);
+    // 移除 getValidSession 依赖，避免无限循环
+  }, [user, authLoading, isPageVisible, dataLoaded, loadBriefs]);
 
   // Manual refresh function
   // const handleManualRefresh = async () => {

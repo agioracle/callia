@@ -26,7 +26,7 @@ import {
   Loader2,
   Check
 } from "lucide-react";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -314,73 +314,74 @@ export default function ProfilePage() {
     }
   }, [loading, authLoading]);
 
+  // 使用useCallback优化fetchData函数
+  const fetchData = useCallback(async () => {
+    // Wait for auth to complete first
+    if (authLoading) {
+      return;
+    }
+
+    if (!user?.id) {
+      setLoading(false);
+      setDataLoaded(true);
+      return;
+    }
+
+    const now = Date.now();
+    const hasData = subscriptions.length > 0 || managedSources.length > 0;
+    const shouldSkipFetch = hasData &&
+                           now - lastFetchTimeRef.current < CACHE_DURATION;
+
+    // Skip fetching if we have cached data and it's still fresh
+    if (shouldSkipFetch) {
+      console.log('Using cached profile data');
+      setDataLoaded(true);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch subscriptions, managed sources, and user profile in parallel
+      const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
+        fetchUserSubscriptions(getValidSession),
+        fetchManagedSources(getValidSession),
+        fetchUserProfile(getValidSession)
+      ]);
+
+      setSubscriptions(subscriptionsData || []);
+      setManagedSources(managedSourcesData || []);
+      setUserProfile(profileData);
+
+      if (profileData) {
+        setPreferences({
+          emailDelivery: profileData.enable_email_delivery,
+          briefLanguage: profileData.brief_language
+        });
+      }
+
+      lastFetchTimeRef.current = now;
+      setDataLoaded(true);
+
+      console.log('Fetched fresh profile data');
+    } catch (err) {
+      setError('Failed to fetch data');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [authLoading, user?.id, subscriptions.length, managedSources.length]); // 移除 getValidSession 依赖，避免无限循环
+
   // Optimized fetch user data with caching and better error handling
   useEffect(() => {
-    const fetchData = async () => {
-      // Wait for auth to complete first
-      if (authLoading) {
-        return;
-      }
-
-      if (!user?.id) {
-        setLoading(false);
-        setDataLoaded(true);
-        return;
-      }
-
-      const now = Date.now();
-      const hasData = subscriptions.length > 0 || managedSources.length > 0;
-      const shouldSkipFetch = hasData &&
-                             now - lastFetchTimeRef.current < CACHE_DURATION;
-
-      // Skip fetching if we have cached data and it's still fresh
-      if (shouldSkipFetch) {
-        console.log('Using cached profile data');
-        setDataLoaded(true);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Fetch subscriptions, managed sources, and user profile in parallel
-        const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
-          fetchUserSubscriptions(getValidSession),
-          fetchManagedSources(getValidSession),
-          fetchUserProfile(getValidSession)
-        ]);
-
-        setSubscriptions(subscriptionsData || []);
-        setManagedSources(managedSourcesData || []);
-        setUserProfile(profileData);
-
-        if (profileData) {
-          setPreferences({
-            emailDelivery: profileData.enable_email_delivery,
-            briefLanguage: profileData.brief_language
-          });
-        }
-
-        lastFetchTimeRef.current = now;
-        setDataLoaded(true);
-
-        console.log('Fetched fresh profile data');
-      } catch (err) {
-        setError('Failed to fetch data');
-        console.error('Error fetching data:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     // Only load if page is visible and we haven't loaded data yet, or if we need to refresh
     if (!authLoading && (isPageVisible || !dataLoaded)) {
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, isPageVisible, getValidSession]); // Intentionally excluding other deps to prevent infinite loops
+    // 移除 getValidSession 依赖，避免无限循环
+  }, [user?.id, authLoading, isPageVisible, dataLoaded, fetchData]);
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
