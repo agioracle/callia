@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import Footer from "@/components/Footer";
+import { plansData } from "@/components/PricingPlans";
 import {
   User,
   Globe,
@@ -22,7 +23,8 @@ import {
   Link as LinkIcon,
   Plus,
   Settings,
-  Loader2
+  Loader2,
+  Check
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
@@ -58,6 +60,15 @@ type UserSubscription = {
   status: string;
   news_source: NewsSource;
 };
+
+interface UserProfile {
+  user_id: string;
+  email: string;
+  enable_email_delivery: boolean;
+  brief_language: string;
+  join_date: string;
+  pricing_plan: string;
+}
 
 type NewSourceForm = {
   url: string;
@@ -254,6 +265,7 @@ export default function ProfilePage() {
   });
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { user, loading: authLoading, getValidSession } = useAuth();
 
     // Performance optimization states
@@ -263,6 +275,21 @@ export default function ProfilePage() {
 
   // Use useRef to track cache time to avoid triggering re-renders
   const lastFetchTimeRef = useRef<number>(0);
+
+  // Map database pricing_plan to actual plan names
+  const getPlanName = (pricingPlan: string) => {
+    const planMapping: { [key: string]: string } = {
+      'Free': '7-day Free Trial',
+      'Pro': 'Pro',
+      'Max': 'Max'
+    };
+    return planMapping[pricingPlan] || '7-day Free Trial';
+  };
+
+  // Find current plan based on user's pricing_plan from database
+  const currentPlan = userProfile?.pricing_plan
+    ? plansData.find(p => p.name === getPlanName(userProfile.pricing_plan))
+    : plansData.find(p => p.name === "7-day Free Trial"); // fallback
 
   // Page visibility detection for performance optimization
   useEffect(() => {
@@ -327,6 +354,7 @@ export default function ProfilePage() {
 
         setSubscriptions(subscriptionsData || []);
         setManagedSources(managedSourcesData || []);
+        setUserProfile(profileData);
 
         if (profileData) {
           setPreferences({
@@ -704,6 +732,54 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   </div>
+                </div>
+
+
+                <Separator />
+
+                {/* Current Plan */}
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-medium">Current Plan</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Your current subscription plan and benefits
+                    </p>
+                  </div>
+                  {loading ? (
+                    <div className="space-y-3 p-4 border rounded-lg">
+                      <div className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                      <div className="h-16 bg-gray-200 rounded animate-pulse"></div>
+                    </div>
+                  ) : error ? (
+                    <div className="text-red-500 p-4 border rounded-lg">
+                      Error loading plan information: {error}
+                    </div>
+                  ) : currentPlan ? (
+                    <div className="p-4 border rounded-lg space-y-4">
+                      <div className="space-y-1">
+                        <p className="text-xl font-bold">{currentPlan.name}</p>
+                        <p className="text-muted-foreground">{currentPlan.price}/month</p>
+                      </div>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        {currentPlan.features.map(feature => (
+                          <li key={feature} className="flex items-center">
+                            <Check className="h-4 w-4 mr-2 text-primary"/>
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="pt-2">
+                        <Button variant="outline" size="sm" onClick={() => window.location.href = '/billing'}>
+                          Manage Billing
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-muted-foreground p-4 border rounded-lg">
+                      No plan information available
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
