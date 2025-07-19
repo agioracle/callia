@@ -44,7 +44,7 @@ export const plansData: Plan[] = [
   {
     name: "Max",
     price: "$11.99",
-    description: "For serious news consumers",
+    description: "For power users and professionals",
     features: [
       "Everything in Pro",
       "Extra 20 news sources (total up to 50)",
