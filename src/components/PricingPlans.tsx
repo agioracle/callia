@@ -125,7 +125,7 @@ export default function PricingPlans({
   showBillingToggle = true,
 }: PricingPlansProps) {
   const router = useRouter();
-  const [isAnnual, setIsAnnual] = useState(true);
+  const [isAnnual, setIsAnnual] = useState(false);
   const [paddlePrices, setPaddlePrices] = useState<Record<string, {
     monthlyPrice: number;
     annualPrice: number;
@@ -350,9 +350,9 @@ export default function PricingPlans({
             <span className={`text-sm font-medium ${isAnnual ? 'text-primary' : 'text-muted-foreground'}`}>
               Annually
             </span>
-            {isAnnual && (
+            {true && (
               <Badge variant="secondary" className="text-xs">
-                Save up to 17%
+                Save up to 16%
               </Badge>
             )}
           </div>
