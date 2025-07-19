@@ -94,6 +94,9 @@ declare global {
       Status: {
         libraryVersion: string;
       };
+      Checkout: {
+        open: (options: { items: { priceId: string; quantity: number }[] }) => void;
+      };
     };
   }
 }
