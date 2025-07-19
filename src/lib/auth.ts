@@ -46,6 +46,54 @@ const ensureUserProfile = async (userId: string, email: string) => {
   }
 }
 
+// 获取当前有效的access token（推荐使用这个而不是直接调用getSession）
+export const getValidAccessToken = async (): Promise<string | null> => {
+  try {
+    // 优先使用缓存的session（如果在React组件中，应该使用useAuth().getValidSession()）
+    const { data: { session }, error } = await supabase.auth.getSession()
+
+    if (error) {
+      console.error('Error getting session:', error)
+      return null
+    }
+
+    if (!session?.access_token) {
+      return null
+    }
+
+    // 检查token是否即将过期（5分钟内）
+    try {
+      const tokenParts = session.access_token.split('.')
+      if (tokenParts.length === 3) {
+        const payload = JSON.parse(atob(tokenParts[1]))
+        const expirationTime = payload.exp * 1000
+        const currentTime = Date.now()
+        const timeUntilExpiry = expirationTime - currentTime
+
+        // 如果token在5分钟内过期，尝试刷新
+        if (timeUntilExpiry < 5 * 60 * 1000) {
+          console.log('Token expiring soon, attempting refresh...')
+          const { data: refreshedData, error: refreshError } = await supabase.auth.refreshSession()
+
+          if (refreshError || !refreshedData.session?.access_token) {
+            console.error('Failed to refresh session:', refreshError)
+            return session.access_token // 返回原token，让上层处理
+          }
+
+          return refreshedData.session.access_token
+        }
+      }
+    } catch (parseError) {
+      console.error('Error parsing token:', parseError)
+    }
+
+    return session.access_token
+  } catch (error) {
+    console.error('Error in getValidAccessToken:', error)
+    return null
+  }
+}
+
 export const signUp = async (email: string, password: string, fullName: string) => {
   const { data, error } = await supabase.auth.signUp({
     email,

@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+// Session type no longer needed as we use AuthContext directly
 import {
   detectRSSFeed,
   extractSiteInfo
@@ -63,89 +64,11 @@ interface NewSourceForm {
 
 
 
-// API helper functions
-const getAuthToken = async () => {
-  const { supabase } = await import('@/lib/supabase');
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
-};
+// All API functions are now inline to use getValidSession directly from AuthContext
 
-const fetchNewsSources = async () => {
-  const token = await getAuthToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
+// CreateNewsSourceData interface removed - using inline types
 
-  const response = await fetch('/api/community/sources', {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch news sources');
-  }
-  return response.json();
-};
-
-const subscribeToSource = async (sourceId: string, action: 'subscribe' | 'unsubscribe') => {
-  const token = await getAuthToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-
-  const response = await fetch('/api/community/subscribe', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ sourceId, action }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update subscription');
-  }
-
-  return response.json();
-};
-
-interface CreateNewsSourceData {
-  title: string
-  description: string
-  language: string
-  category: string
-  link: string
-  rss: string
-  is_public: boolean
-}
-
-const createNewsSourceAPI = async (newsSourceData: CreateNewsSourceData) => {
-  const token = await getAuthToken();
-  if (!token) {
-    throw new Error('No authentication token available');
-  }
-
-  const response = await fetch('/api/profile/sources', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'create',
-      newsSourceData
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create news source');
-  }
-
-  return response.json();
-};
+// createNewsSourceAPI function removed - now inline
 
 const categories = [
   "Technology", "Business", "Science", "Politics", "Sports",
@@ -159,7 +82,7 @@ const languages = [
 ];
 
 export default function CommunityPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getValidSession } = useAuth();
   const [activeTab, setActiveTab] = useState("official");
   const [searchQuery, setSearchQuery] = useState("");
   const [officialSources, setOfficialSources] = useState<NewsSource[]>([]);
@@ -231,7 +154,30 @@ export default function CommunityPage() {
         is_public: newSourceForm.isPublic
       };
 
-      await createNewsSourceAPI(newsSourceData);
+      // Use getValidSession for creating news source
+      const validSession = await getValidSession();
+      if (!validSession?.access_token) {
+        throw new Error('No access token available');
+      }
+
+      const response = await fetch('/api/profile/sources', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${validSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'create',
+          newsSourceData
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create news source');
+      }
+
+      await response.json();
 
       // Reset form and close dialog
       setNewSourceForm({
@@ -318,7 +264,23 @@ export default function CommunityPage() {
         setLoading(true);
         setError(null);
 
-        const data = await fetchNewsSources();
+        // Use getValidSession to get cached session
+        const validSession = await getValidSession();
+        if (!validSession?.access_token) {
+          throw new Error('No access token available');
+        }
+
+        const response = await fetch('/api/community/sources', {
+          headers: {
+            'Authorization': `Bearer ${validSession.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch news sources');
+        }
+
+        const data = await response.json();
 
         setOfficialSources(data.official || []);
         setCommunitySources(data.community || []);
@@ -361,7 +323,27 @@ export default function CommunityPage() {
 
       const action = currentSource.isSubscribed ? 'unsubscribe' : 'subscribe';
 
-      const result = await subscribeToSource(sourceId, action);
+      // Use getValidSession for subscription call
+      const validSession = await getValidSession();
+      if (!validSession?.access_token) {
+        throw new Error('No access token available');
+      }
+
+      const response = await fetch('/api/community/subscribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${validSession.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ sourceId, action }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || `Failed to ${action} source`);
+      }
+
+      const result = await response.json();
 
       if (result.error) {
         if (result.error === 'Subscription limit reached') {

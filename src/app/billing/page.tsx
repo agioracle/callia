@@ -19,7 +19,7 @@ interface UserProfile {
 }
 
 export default function BillingPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getValidSession } = useAuth();
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(false); // Change initial state to false
   const [error, setError] = useState<string | null>(null);
@@ -84,18 +84,12 @@ export default function BillingPage() {
       }
 
       // API helper functions inside useEffect to avoid dependency issues
-      const getAuthToken = async () => {
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
-        return session?.access_token;
-      };
-
       const fetchUserProfileFromAPI = async () => {
-        const token = await getAuthToken();
-        if (!token) throw new Error('No authentication token available');
+        const validSession = await getValidSession();
+        if (!validSession?.access_token) throw new Error('No authentication token available');
 
         const response = await fetch('/api/profile/user', {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${validSession.access_token}` }
         });
         if (!response.ok) throw new Error('Failed to fetch user profile');
         return response.json();
@@ -127,7 +121,7 @@ export default function BillingPage() {
       fetchUserProfile();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user, authLoading, isPageVisible, getValidSession]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
@@ -138,18 +132,12 @@ export default function BillingPage() {
   //     setError(null);
 
   //     // API helper functions for manual refresh
-  //     const getAuthToken = async () => {
-  //       const { supabase } = await import('@/lib/supabase');
-  //       const { data: { session } } = await supabase.auth.getSession();
-  //       return session?.access_token;
-  //     };
-
   //     const fetchUserProfileFromAPI = async () => {
-  //       const token = await getAuthToken();
-  //       if (!token) throw new Error('No authentication token available');
+  //       const validSession = await getValidSession();
+  //       if (!validSession?.access_token) throw new Error('No authentication token available');
 
   //       const response = await fetch('/api/profile/user', {
-  //         headers: { 'Authorization': `Bearer ${token}` }
+  //         headers: { 'Authorization': `Bearer ${validSession.access_token}` }
   //       });
   //       if (!response.ok) throw new Error('Failed to fetch user profile');
   //       return response.json();
@@ -212,13 +200,19 @@ export default function BillingPage() {
         <div className="container mx-auto max-w-4xl px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Please sign in to view billing information</h2>
+              <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
+                Billing & Subscription
+              </h1>
+              <p className="text-muted-foreground text-lg mb-8">
+                Please log in to view your subscription information.
+              </p>
               <Button onClick={() => window.location.href = '/login'}>
                 Sign In
               </Button>
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }

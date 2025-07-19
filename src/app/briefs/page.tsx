@@ -57,7 +57,7 @@ const fetchUserBriefs = async (authToken: string): Promise<UserBrief[]> => {
 };
 
 export default function BriefsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getValidSession } = useAuth();
   const [briefs, setBriefs] = useState<UserBrief[]>([]);
   const [selectedBrief, setSelectedBrief] = useState<UserBrief | null>(null);
   const [loading, setLoading] = useState(false); // Change initial state to false
@@ -177,15 +177,14 @@ export default function BriefsPage() {
         setLoading(true);
         setError(null);
 
-        // Get the current session to extract the access token
-        const { supabase } = await import('@/lib/supabase');
-        const { data: { session } } = await supabase.auth.getSession();
+        // 使用AuthContext的缓存session而不是重新获取
+        const validSession = await getValidSession();
 
-        if (!session?.access_token) {
+        if (!validSession?.access_token) {
           throw new Error('No access token available');
         }
 
-        const userBriefs = await fetchUserBriefs(session.access_token);
+        const userBriefs = await fetchUserBriefs(validSession.access_token);
         setBriefs(userBriefs);
         if (userBriefs.length > 0) {
           setSelectedBrief(userBriefs[0]);
@@ -207,7 +206,7 @@ export default function BriefsPage() {
       loadBriefs();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user, authLoading, isPageVisible, getValidSession]);
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
@@ -338,13 +337,19 @@ export default function BriefsPage() {
         <div className="container mx-auto max-w-7xl px-4 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
-              <h2 className="text-2xl font-bold mb-4">Please sign in to begin your news briefings journey</h2>
+              <h1 className="font-newsreader text-3xl md:text-4xl font-bold mb-4">
+                Your News Briefings
+              </h1>
+              <p className="text-muted-foreground text-lg mb-8">
+                Please log in to view your news briefings.
+              </p>
               <Button onClick={() => window.location.href = '/login'}>
                 Sign In
               </Button>
             </div>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }

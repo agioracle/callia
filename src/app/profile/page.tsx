@@ -31,6 +31,7 @@ import {
   detectRSSFeed,
   extractSiteInfo
 } from "@/lib/auth";
+import { Session } from '@supabase/supabase-js';
 
 // Define types for the data structure
 type NewsSource = {
@@ -91,14 +92,13 @@ const languages = [
 ];
 
 // API helper functions
-const getAuthToken = async () => {
-  const { supabase } = await import('@/lib/supabase');
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.access_token;
+const getAuthToken = async (getValidSession: () => Promise<Session | null>) => {
+  const validSession = await getValidSession();
+  return validSession?.access_token;
 };
 
-const fetchUserSubscriptions = async () => {
-  const token = await getAuthToken();
+const fetchUserSubscriptions = async (getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/subscriptions', {
@@ -108,8 +108,8 @@ const fetchUserSubscriptions = async () => {
   return response.json();
 };
 
-const fetchManagedSources = async () => {
-  const token = await getAuthToken();
+const fetchManagedSources = async (getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/sources', {
@@ -119,8 +119,8 @@ const fetchManagedSources = async () => {
   return response.json();
 };
 
-const fetchUserProfile = async () => {
-  const token = await getAuthToken();
+const fetchUserProfile = async (getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/user', {
@@ -130,8 +130,8 @@ const fetchUserProfile = async () => {
   return response.json();
 };
 
-const updateSubscription = async (newsSourceId: string, action: 'toggle' | 'remove') => {
-  const token = await getAuthToken();
+const updateSubscription = async (newsSourceId: string, action: 'toggle' | 'remove', getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/subscriptions', {
@@ -166,8 +166,8 @@ interface ProfileUpdates {
   brief_language?: string;
 }
 
-const updateManagedSource = async (sourceId: string, updates: SourceUpdates) => {
-  const token = await getAuthToken();
+const updateManagedSource = async (sourceId: string, updates: SourceUpdates, getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/sources', {
@@ -182,8 +182,8 @@ const updateManagedSource = async (sourceId: string, updates: SourceUpdates) => 
   return response.json();
 };
 
-const deleteManagedSource = async (sourceId: string) => {
-  const token = await getAuthToken();
+const deleteManagedSource = async (sourceId: string, getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/sources', {
@@ -198,8 +198,8 @@ const deleteManagedSource = async (sourceId: string) => {
   return response.json();
 };
 
-const createManagedSource = async (newsSourceData: CreateSourceData) => {
-  const token = await getAuthToken();
+const createManagedSource = async (newsSourceData: CreateSourceData, getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/sources', {
@@ -214,8 +214,8 @@ const createManagedSource = async (newsSourceData: CreateSourceData) => {
   return response.json();
 };
 
-const saveUserProfile = async (updates: ProfileUpdates) => {
-  const token = await getAuthToken();
+const saveUserProfile = async (updates: ProfileUpdates, getValidSession: () => Promise<Session | null>) => {
+  const token = await getAuthToken(getValidSession);
   if (!token) throw new Error('No authentication token available');
 
   const response = await fetch('/api/profile/user', {
@@ -254,7 +254,7 @@ export default function ProfilePage() {
   });
   const [preferencesSaving, setPreferencesSaving] = useState(false);
   const [showLoadingTimeout, setShowLoadingTimeout] = useState(false);
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, getValidSession } = useAuth();
 
     // Performance optimization states
   const [isPageVisible, setIsPageVisible] = useState<boolean>(true);
@@ -320,9 +320,9 @@ export default function ProfilePage() {
 
         // Fetch subscriptions, managed sources, and user profile in parallel
         const [subscriptionsData, managedSourcesData, profileData] = await Promise.all([
-          fetchUserSubscriptions(),
-          fetchManagedSources(),
-          fetchUserProfile()
+          fetchUserSubscriptions(getValidSession),
+          fetchManagedSources(getValidSession),
+          fetchUserProfile(getValidSession)
         ]);
 
         setSubscriptions(subscriptionsData || []);
@@ -352,7 +352,7 @@ export default function ProfilePage() {
       fetchData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, authLoading, isPageVisible]); // Intentionally excluding other deps to prevent infinite loops
+  }, [user?.id, authLoading, isPageVisible, getValidSession]); // Intentionally excluding other deps to prevent infinite loops
 
   // Manual refresh function
   // const handleManualRefresh = async () => {
@@ -415,7 +415,7 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      const result = await updateSubscription(newsSourceId, 'toggle');
+      const result = await updateSubscription(newsSourceId, 'toggle', getValidSession);
 
       setSubscriptions(subs =>
         subs.map(sub =>
@@ -433,7 +433,7 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      await updateSubscription(newsSourceId, 'remove');
+      await updateSubscription(newsSourceId, 'remove', getValidSession);
       setSubscriptions(subs => subs.filter(sub => sub.news_source_id !== newsSourceId));
     } catch {
       setError('Failed to remove subscription');
@@ -449,7 +449,7 @@ export default function ProfilePage() {
         const source = managedSources.find(s => s.id === sourceId);
         const newStatus = source?.status === 'Activated' ? 'Deactivated' : 'Activated';
 
-        await updateManagedSource(sourceId, { status: newStatus });
+        await updateManagedSource(sourceId, { status: newStatus }, getValidSession);
 
         setManagedSources(sources =>
           sources.map(source =>
@@ -462,7 +462,7 @@ export default function ProfilePage() {
         const source = managedSources.find(s => s.id === sourceId);
         const newIsPublic = !source?.is_public;
 
-        await updateManagedSource(sourceId, { is_public: newIsPublic });
+        await updateManagedSource(sourceId, { is_public: newIsPublic }, getValidSession);
 
         setManagedSources(sources =>
           sources.map(source =>
@@ -481,7 +481,7 @@ export default function ProfilePage() {
     if (!user?.id) return;
 
     try {
-      await deleteManagedSource(sourceId);
+      await deleteManagedSource(sourceId, getValidSession);
       setManagedSources(sources => sources.filter(source => source.id !== sourceId));
     } catch {
       setError('Failed to delete source');
@@ -506,7 +506,7 @@ export default function ProfilePage() {
         is_public: newSourceForm.isPublic
       };
 
-      const data = await createManagedSource(newsSourceData);
+      const data = await createManagedSource(newsSourceData, getValidSession);
 
       setManagedSources(sources => [data, ...sources]);
       setNewSourceForm({
@@ -546,7 +546,7 @@ export default function ProfilePage() {
         brief_language: preferences.briefLanguage
       };
 
-      const data = await saveUserProfile(updates);
+      const data = await saveUserProfile(updates, getValidSession);
 
       // Update local state with saved data
       setPreferences({
