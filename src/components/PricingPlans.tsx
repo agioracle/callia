@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface Plan {
   name: string;
@@ -95,7 +96,7 @@ declare global {
         libraryVersion: string;
       };
       Checkout: {
-        open: (options: { items: { priceId: string; quantity: number }[] }) => void;
+        open: (options: { items: { priceId: string; quantity: number }[], customData: { user_id: string; email: string } }) => void;
       };
     };
   }
@@ -128,6 +129,7 @@ export default function PricingPlans({
   showBillingToggle = true,
 }: PricingPlansProps) {
   const router = useRouter();
+  const { user, loading } = useAuth();
   const [isAnnual, setIsAnnual] = useState(false);
   const [paddlePrices, setPaddlePrices] = useState<Record<string, {
     monthlyPrice: number;
@@ -253,11 +255,23 @@ export default function PricingPlans({
       router.push("/briefs");
     }
     if (plan.cta === "Choose Plan") {
+      // Check if user is logged in
+      if (!user && !loading) {
+        // User is not logged in, redirect to login page
+        router.push("/login");
+        return;
+      }
+
+      // User is logged in, proceed with checkout
       window.Paddle.Checkout.open({
         items: [{
           priceId: isAnnual ? plan.annualPriceId : plan.monthlyPriceId,
           quantity: plan.quantity,
         }],
+        customData: {
+          user_id: user?.id || "",
+          email: user?.email || "",
+        }
       });
     }
   };
